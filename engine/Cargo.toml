@@ -1,0 +1,17 @@
+[package]
+name = "stirling_engine"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "stirling_engine"
+crate-type = ["cdylib", "staticlib", "lib"]
+
+[dependencies]
+lopdf = "0.34"
+uniffi = { version = "0.28", features = ["cli"] }
+thiserror = "2.0"
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
