@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.stirlingmobile.ui.CompressScreen
+import com.stirlingmobile.ui.HtmlToPdfScreen
 import com.stirlingmobile.ui.ImagesToPdfScreen
 import com.stirlingmobile.ui.MergeScreen
 import com.stirlingmobile.ui.PagesToolMode
@@ -28,7 +29,7 @@ import com.stirlingmobile.ui.PdfToImagesScreen
 import com.stirlingmobile.ui.RotateScreen
 import com.stirlingmobile.ui.SplitScreen
 
-private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES }
+private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +59,7 @@ private fun App() {
         Tool.REMOVE_PASSWORD -> PasswordToolScreen(PasswordToolMode.REMOVE)
         Tool.IMAGES_TO_PDF -> ImagesToPdfScreen()
         Tool.PDF_TO_IMAGES -> PdfToImagesScreen()
+        Tool.HTML_TO_PDF -> HtmlToPdfScreen()
     }
 }
 
@@ -78,5 +80,6 @@ private fun HomeScreen(onSelect: (Tool) -> Unit) {
         Button(onClick = { onSelect(Tool.REMOVE_PASSWORD) }) { Text("Remove Password") }
         Button(onClick = { onSelect(Tool.IMAGES_TO_PDF) }) { Text("Images to PDF") }
         Button(onClick = { onSelect(Tool.PDF_TO_IMAGES) }) { Text("PDF to Images") }
+        Button(onClick = { onSelect(Tool.HTML_TO_PDF) }) { Text("HTML to PDF") }
     }
 }
