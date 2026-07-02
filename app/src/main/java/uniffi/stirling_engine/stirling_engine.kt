@@ -737,6 +737,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -762,6 +764,8 @@ internal interface UniffiLib : Library {
     ): Byte
     fun uniffi_stirling_engine_fn_func_convert_images_to_pdf(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_convert_pdf_to_images(`inputPath`: RustBuffer.ByValue,`pdfiumLibDir`: RustBuffer.ByValue,`dpi`: Int,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_describe_images(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_extract_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -900,6 +904,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_convert_images_to_pdf(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_convert_pdf_to_images(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_describe_images(
     ): Short
     fun uniffi_stirling_engine_checksum_func_extract_pages(
@@ -946,6 +952,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_convert_images_to_pdf() != 52008.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_convert_pdf_to_images() != 33306.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_describe_images() != 21719.toShort()) {
@@ -1398,6 +1407,28 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
         FfiConverterSequenceString.lower(`inputPaths`),FfiConverterString.lower(`outputPath`),_status)
 }
     
+    
+
+        /**
+         * Rasterizes every page of the PDF at `input_path` to a PNG at `dpi` and
+         * writes them into `output_dir` as `page_1.png`, `page_2.png`, ... in
+         * document order. Returns the written paths.
+         *
+         * `pdfium_lib_dir` is the directory containing the platform's `libpdfium.so`
+         * (Kotlin passes `context.applicationInfo.nativeLibraryDir`) — pdfium-render
+         * dynamically loads the vendored PDFium binary from there rather than
+         * statically linking it, since PDFium ships as a prebuilt binary per ABI
+         * (see each ABI's jniLibs directory, e.g. jniLibs/arm64-v8a/libpdfium.so),
+         * not something we compile ourselves.
+         */
+    @Throws(EngineException::class) fun `convertPdfToImages`(`inputPath`: kotlin.String, `pdfiumLibDir`: kotlin.String, `dpi`: kotlin.UInt, `outputDir`: kotlin.String): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_convert_pdf_to_images(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`pdfiumLibDir`),FfiConverterUInt.lower(`dpi`),FfiConverterString.lower(`outputDir`),_status)
+}
+    )
+    }
     
 
         /**

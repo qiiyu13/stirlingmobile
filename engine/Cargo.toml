@@ -17,6 +17,7 @@ aes = "0.8"
 cbc = { version = "0.1", features = ["std"] }
 md-5 = "0.10"
 getrandom = "0.2"
+pdfium-render = "0.8"
 
 [[bin]]
 name = "uniffi-bindgen"

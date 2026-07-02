@@ -43,6 +43,14 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+        // pdfium-render dlopen()'s libpdfium.so by filesystem path at
+        // runtime (it's not loaded via System.loadLibrary), so it needs to
+        // actually be extracted to nativeLibraryDir on install rather than
+        // left mmap'd uncompressed inside the APK (AGP's default since
+        // native libs are page-aligned).
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 
