@@ -717,6 +717,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -735,6 +737,8 @@ internal interface UniffiLib : Library {
     fun uniffi_stirling_engine_fn_func_get_page_count(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     fun uniffi_stirling_engine_fn_func_merge_pdfs(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_rotate_pdf(`inputPath`: RustBuffer.ByValue,`angleDegrees`: Int,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_split_pdf(`inputPath`: RustBuffer.ByValue,`splitAfterPages`: RustBuffer.ByValue,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -854,6 +858,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_merge_pdfs(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_rotate_pdf(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_split_pdf(
     ): Short
     fun ffi_stirling_engine_uniffi_contract_version(
@@ -877,6 +883,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_merge_pdfs() != 62406.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_rotate_pdf() != 65286.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_split_pdf() != 21643.toShort()) {
@@ -949,6 +958,29 @@ public object FfiConverterUInt: FfiConverter<UInt, Int> {
 
     override fun write(value: UInt, buf: ByteBuffer) {
         buf.putInt(value.toInt())
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterInt: FfiConverter<Int, Int> {
+    override fun lift(value: Int): Int {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Int {
+        return buf.getInt()
+    }
+
+    override fun lower(value: Int): Int {
+        return value
+    }
+
+    override fun allocationSize(value: Int) = 4UL
+
+    override fun write(value: Int, buf: ByteBuffer) {
+        buf.putInt(value)
     }
 }
 
@@ -1185,6 +1217,20 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_merge_pdfs(
         FfiConverterSequenceString.lower(`inputPaths`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Rotates every page of the PDF at `input_path` by `angle_degrees`
+         * (added to each page's existing rotation, normalized to 0/90/180/270)
+         * and writes the result to `output_path`.
+         */
+    @Throws(EngineException::class) fun `rotatePdf`(`inputPath`: kotlin.String, `angleDegrees`: kotlin.Int, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_rotate_pdf(
+        FfiConverterString.lower(`inputPath`),FfiConverterInt.lower(`angleDegrees`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     
