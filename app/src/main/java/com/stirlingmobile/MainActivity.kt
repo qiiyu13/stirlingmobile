@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.stirlingmobile.ui.CompressScreen
+import com.stirlingmobile.ui.GenerateCertificateScreen
 import com.stirlingmobile.ui.HtmlToPdfScreen
 import com.stirlingmobile.ui.ImagesToPdfScreen
 import com.stirlingmobile.ui.MarkdownToPdfScreen
@@ -30,10 +31,11 @@ import com.stirlingmobile.ui.PasswordToolMode
 import com.stirlingmobile.ui.PasswordToolScreen
 import com.stirlingmobile.ui.PdfToImagesScreen
 import com.stirlingmobile.ui.RotateScreen
+import com.stirlingmobile.ui.SignPdfScreen
 import com.stirlingmobile.ui.SignatureStampScreen
 import com.stirlingmobile.ui.SplitScreen
 
-private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP }
+private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,6 +68,8 @@ private fun App() {
         Tool.HTML_TO_PDF -> HtmlToPdfScreen()
         Tool.MARKDOWN_TO_PDF -> MarkdownToPdfScreen()
         Tool.SIGNATURE_STAMP -> SignatureStampScreen()
+        Tool.SIGN_PDF -> SignPdfScreen()
+        Tool.GENERATE_CERTIFICATE -> GenerateCertificateScreen()
     }
 }
 
@@ -88,6 +92,8 @@ private fun HomeScreen(onSelect: (Tool) -> Unit) {
         Button(onClick = { onSelect(Tool.PDF_TO_IMAGES) }) { Text("PDF to Images") }
         Button(onClick = { onSelect(Tool.HTML_TO_PDF) }) { Text("HTML to PDF") }
         Button(onClick = { onSelect(Tool.MARKDOWN_TO_PDF) }) { Text("Markdown to PDF") }
-        Button(onClick = { onSelect(Tool.SIGNATURE_STAMP) }) { Text("Sign PDF") }
+        Button(onClick = { onSelect(Tool.SIGNATURE_STAMP) }) { Text("Sign PDF (stamp)") }
+        Button(onClick = { onSelect(Tool.SIGN_PDF) }) { Text("Sign PDF (digital signature)") }
+        Button(onClick = { onSelect(Tool.GENERATE_CERTIFICATE) }) { Text("Generate signing certificate") }
     }
 }

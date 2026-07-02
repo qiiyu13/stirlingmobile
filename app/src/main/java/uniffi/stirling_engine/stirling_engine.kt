@@ -743,6 +743,10 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -776,6 +780,8 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_extract_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_generate_self_signed_pfx(`commonName`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_get_page_count(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     fun uniffi_stirling_engine_fn_func_merge_pdfs(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -785,6 +791,8 @@ internal interface UniffiLib : Library {
     fun uniffi_stirling_engine_fn_func_remove_password(`inputPath`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_rotate_pdf(`inputPath`: RustBuffer.ByValue,`angleDegrees`: Int,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_sign_pdf(`inputPath`: RustBuffer.ByValue,`pfxPath`: RustBuffer.ByValue,`pfxPassword`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_split_pdf(`inputPath`: RustBuffer.ByValue,`splitAfterPages`: RustBuffer.ByValue,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -920,6 +928,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_extract_pages(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_generate_self_signed_pfx(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_get_page_count(
     ): Short
     fun uniffi_stirling_engine_checksum_func_merge_pdfs(
@@ -929,6 +939,8 @@ internal interface UniffiLib : Library {
     fun uniffi_stirling_engine_checksum_func_remove_password(
     ): Short
     fun uniffi_stirling_engine_checksum_func_rotate_pdf(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_sign_pdf(
     ): Short
     fun uniffi_stirling_engine_checksum_func_split_pdf(
     ): Short
@@ -978,6 +990,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_stirling_engine_checksum_func_extract_pages() != 39682.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_stirling_engine_checksum_func_generate_self_signed_pfx() != 10884.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_get_page_count() != 45986.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -991,6 +1006,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_rotate_pdf() != 65286.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_sign_pdf() != 64097.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_split_pdf() != 21643.toShort()) {
@@ -1493,6 +1511,23 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
     
 
         /**
+         * Generates a fresh self-signed RSA-2048 identity and bundles it as a
+         * PKCS#12 (.pfx) file at `output_path`, protected by `password`. Since
+         * this app can't act as a trusted CA, readers will always show "issuer
+         * unknown" for the result - fine for personal/internal signing (the same
+         * limitation any self-signed cert has), not a substitute for a CA-issued
+         * certificate where cross-organization trust matters.
+         */
+    @Throws(EngineException::class) fun `generateSelfSignedPfx`(`commonName`: kotlin.String, `password`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_generate_self_signed_pfx(
+        FfiConverterString.lower(`commonName`),FfiConverterString.lower(`password`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
          * Returns the page count of the PDF at `path`.
          */
     @Throws(EngineException::class) fun `getPageCount`(`path`: kotlin.String): kotlin.UInt {
@@ -1555,6 +1590,22 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_rotate_pdf(
         FfiConverterString.lower(`inputPath`),FfiConverterInt.lower(`angleDegrees`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Adds a detached PKCS#7/CMS digital signature (RSA + SHA-256,
+         * `adbe.pkcs7.detached`) to the PDF at `input_path`, using the identity in
+         * the PKCS#12 file at `pfx_path`, and writes the result to `output_path`.
+         * This is an approval signature (does not set `/DocMDP` permissions); see
+         * `certify_pdf` for a certifying signature.
+         */
+    @Throws(EngineException::class) fun `signPdf`(`inputPath`: kotlin.String, `pfxPath`: kotlin.String, `pfxPassword`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_sign_pdf(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`pfxPath`),FfiConverterString.lower(`pfxPassword`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     

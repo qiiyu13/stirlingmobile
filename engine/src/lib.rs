@@ -1,14 +1,18 @@
 uniffi::setup_scaffolding!();
 
+mod cms_sign;
 mod compress;
 mod convert;
 mod info;
 mod markdown;
 mod merge;
 mod pages;
+mod pfx;
+mod pfx_generate;
 mod rasterize;
 mod rotate;
 mod security;
+pub(crate) mod sign;
 mod split;
 mod stamp;
 
@@ -18,8 +22,10 @@ pub use info::{describe_images, get_page_count};
 pub use markdown::convert_markdown_to_html;
 pub use merge::{merge_pdfs, EngineError};
 pub use pages::{extract_pages, remove_pages};
+pub use pfx_generate::generate_self_signed_pfx;
 pub use rasterize::convert_pdf_to_images;
 pub use rotate::rotate_pdf;
 pub use security::{add_password, remove_password};
+pub use sign::sign_pdf;
 pub use split::split_pdf;
 pub use stamp::stamp_signature_image;
