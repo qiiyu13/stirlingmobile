@@ -53,6 +53,10 @@ fn merge_documents(documents: Vec<Document>) -> Document {
 
     let mut merged = Document::with_version("1.7");
     merged.objects = all_objects;
+    // max_id must reflect the already-renumbered input objects before minting
+    // new ids below, or new_object_id() hands out colliding ids that silently
+    // overwrite real merged-in objects (e.g. the first doc's font dict).
+    merged.max_id = max_id - 1;
 
     // Locate a Pages dict and a Catalog dict template to reuse, then rebuild
     // Kids/Count so the merged tree references every page from every input.
