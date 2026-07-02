@@ -11,7 +11,7 @@ crate-type = ["cdylib", "staticlib", "lib"]
 lopdf = "0.34"
 uniffi = { version = "0.28", features = ["cli"] }
 thiserror = "2.0"
-image = { version = "0.25", default-features = false, features = ["jpeg"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 flate2 = "1.0"
 aes = "0.8"
 cbc = { version = "0.1", features = ["std"] }

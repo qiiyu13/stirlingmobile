@@ -735,6 +735,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -758,6 +760,8 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_stirling_engine_fn_func_compress_pdf_to_target_size(`inputPath`: RustBuffer.ByValue,`targetBytes`: Long,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    fun uniffi_stirling_engine_fn_func_convert_images_to_pdf(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_describe_images(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_extract_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -894,6 +898,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_compress_pdf_to_target_size(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_convert_images_to_pdf(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_describe_images(
     ): Short
     fun uniffi_stirling_engine_checksum_func_extract_pages(
@@ -937,6 +943,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_compress_pdf_to_target_size() != 17494.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_convert_images_to_pdf() != 52008.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_describe_images() != 21719.toShort()) {
@@ -1373,6 +1382,22 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
 }
     )
     }
+    
+
+        /**
+         * Builds a one-image-per-page PDF from `input_paths` (in order), writing
+         * the result to `output_path`. Each page is sized to the image's pixel
+         * dimensions (1px = 1pt). JPEG inputs are embedded byte-for-byte
+         * (`DCTDecode`) to avoid a lossy re-encode; everything else the `image`
+         * crate can decode (PNG, ...) is re-encoded to JPEG quality 92.
+         */
+    @Throws(EngineException::class) fun `convertImagesToPdf`(`inputPaths`: List<kotlin.String>, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_convert_images_to_pdf(
+        FfiConverterSequenceString.lower(`inputPaths`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
     
 
         /**
