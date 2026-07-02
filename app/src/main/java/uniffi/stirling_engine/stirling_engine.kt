@@ -739,6 +739,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -764,6 +766,8 @@ internal interface UniffiLib : Library {
     ): Byte
     fun uniffi_stirling_engine_fn_func_convert_images_to_pdf(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_convert_markdown_to_html(`markdown`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_convert_pdf_to_images(`inputPath`: RustBuffer.ByValue,`pdfiumLibDir`: RustBuffer.ByValue,`dpi`: Int,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_describe_images(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -904,6 +908,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_convert_images_to_pdf(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_convert_markdown_to_html(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_convert_pdf_to_images(
     ): Short
     fun uniffi_stirling_engine_checksum_func_describe_images(
@@ -952,6 +958,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_convert_images_to_pdf() != 52008.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_convert_markdown_to_html() != 5885.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_convert_pdf_to_images() != 33306.toShort()) {
@@ -1407,6 +1416,21 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
         FfiConverterSequenceString.lower(`inputPaths`),FfiConverterString.lower(`outputPath`),_status)
 }
     
+    
+
+        /**
+         * Converts Markdown to a minimal standalone HTML document (CommonMark plus
+         * GFM tables/strikethrough/footnotes). The caller renders the HTML to PDF
+         * separately (Android's WebView print pipeline) — this function only does
+         * the text transform, no PDF/layout work.
+         */ fun `convertMarkdownToHtml`(`markdown`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_convert_markdown_to_html(
+        FfiConverterString.lower(`markdown`),_status)
+}
+    )
+    }
     
 
         /**

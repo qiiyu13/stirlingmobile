@@ -2,10 +2,6 @@ package com.stirlingmobile.ui
 
 import android.content.Context
 import android.net.Uri
-import android.print.PrintAttributes
-import android.print.PrintManager
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +24,7 @@ data class HtmlToPdfUiState(
 /// without reflecting into non-SDK internals, which Android's hidden-API
 /// enforcement can break at any OS update. Routing through the real
 /// PrintManager dialog (user picks "Save as PDF") is the only path that's
-/// actually part of the public API contract.
+/// actually part of the public API contract. See HtmlPrinter.
 class HtmlToPdfViewModel : ViewModel() {
     private val _state = MutableStateFlow(HtmlToPdfUiState())
     val state: StateFlow<HtmlToPdfUiState> = _state
@@ -40,26 +36,12 @@ class HtmlToPdfViewModel : ViewModel() {
                 val html = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)!!.bufferedReader().use { it.readText() }
                 }
-                printToPdf(context, html)
+                HtmlPrinter.printToPdf(context, html, "html_to_pdf")
             } catch (e: Exception) {
                 _state.value = HtmlToPdfUiState(statusMessage = "Failed: ${e.message}")
                 return@launch
             }
             _state.value = HtmlToPdfUiState(statusMessage = "Choose \"Save as PDF\" in the print dialog to export.")
         }
-    }
-
-    private fun printToPdf(context: Context, html: String) {
-        val webView = WebView(context)
-        // ponytail: static HTML only in v1, no JS-driven content
-        webView.settings.javaScriptEnabled = false
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
-                val printAdapter = webView.createPrintDocumentAdapter("html_to_pdf")
-                printManager.print("html_to_pdf", printAdapter, PrintAttributes.Builder().build())
-            }
-        }
-        webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
     }
 }
