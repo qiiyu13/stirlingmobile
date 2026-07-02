@@ -719,6 +719,10 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -734,9 +738,13 @@ internal interface UniffiLib : Library {
         
     }
 
+    fun uniffi_stirling_engine_fn_func_extract_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_get_page_count(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     fun uniffi_stirling_engine_fn_func_merge_pdfs(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_remove_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_rotate_pdf(`inputPath`: RustBuffer.ByValue,`angleDegrees`: Int,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -854,9 +862,13 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_stirling_engine_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_checksum_func_extract_pages(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_get_page_count(
     ): Short
     fun uniffi_stirling_engine_checksum_func_merge_pdfs(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_remove_pages(
     ): Short
     fun uniffi_stirling_engine_checksum_func_rotate_pdf(
     ): Short
@@ -879,10 +891,16 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
+    if (lib.uniffi_stirling_engine_checksum_func_extract_pages() != 39682.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_get_page_count() != 45986.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_merge_pdfs() != 62406.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_remove_pages() != 12487.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_rotate_pdf() != 65286.toShort()) {
@@ -1197,6 +1215,19 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
     }
 }
         /**
+         * Keeps only the given 1-indexed `pages` from the PDF at `input_path`
+         * (in document order, not `pages` order) and writes them to `output_path`.
+         */
+    @Throws(EngineException::class) fun `extractPages`(`inputPath`: kotlin.String, `pages`: List<kotlin.UInt>, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_extract_pages(
+        FfiConverterString.lower(`inputPath`),FfiConverterSequenceUInt.lower(`pages`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
          * Returns the page count of the PDF at `path`.
          */
     @Throws(EngineException::class) fun `getPageCount`(`path`: kotlin.String): kotlin.UInt {
@@ -1217,6 +1248,19 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_merge_pdfs(
         FfiConverterSequenceString.lower(`inputPaths`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Removes the given 1-indexed `pages` from the PDF at `input_path` and
+         * writes the rest to `output_path`.
+         */
+    @Throws(EngineException::class) fun `removePages`(`inputPath`: kotlin.String, `pages`: List<kotlin.UInt>, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_remove_pages(
+        FfiConverterString.lower(`inputPath`),FfiConverterSequenceUInt.lower(`pages`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     

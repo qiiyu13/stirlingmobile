@@ -18,10 +18,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.stirlingmobile.ui.MergeScreen
+import com.stirlingmobile.ui.PagesToolMode
+import com.stirlingmobile.ui.PagesToolScreen
 import com.stirlingmobile.ui.RotateScreen
 import com.stirlingmobile.ui.SplitScreen
 
-private enum class Tool { HOME, MERGE, SPLIT, ROTATE }
+private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +46,8 @@ private fun App() {
         Tool.MERGE -> MergeScreen()
         Tool.SPLIT -> SplitScreen()
         Tool.ROTATE -> RotateScreen()
+        Tool.REMOVE -> PagesToolScreen(PagesToolMode.REMOVE)
+        Tool.EXTRACT -> PagesToolScreen(PagesToolMode.EXTRACT)
     }
 }
 
@@ -57,5 +61,7 @@ private fun HomeScreen(onSelect: (Tool) -> Unit) {
         Button(onClick = { onSelect(Tool.MERGE) }) { Text("Merge") }
         Button(onClick = { onSelect(Tool.SPLIT) }) { Text("Split") }
         Button(onClick = { onSelect(Tool.ROTATE) }) { Text("Rotate") }
+        Button(onClick = { onSelect(Tool.REMOVE) }) { Text("Remove Pages") }
+        Button(onClick = { onSelect(Tool.EXTRACT) }) { Text("Extract Pages") }
     }
 }
