@@ -731,6 +731,10 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -746,6 +750,8 @@ internal interface UniffiLib : Library {
         
     }
 
+    fun uniffi_stirling_engine_fn_func_add_password(`inputPath`: RustBuffer.ByValue,`userPassword`: RustBuffer.ByValue,`ownerPassword`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_compress_pdf_by_level(`inputPath`: RustBuffer.ByValue,`level`: Byte,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_compress_pdf_custom(`inputPath`: RustBuffer.ByValue,`quality`: Byte,`scalePercent`: Byte,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -761,6 +767,8 @@ internal interface UniffiLib : Library {
     fun uniffi_stirling_engine_fn_func_merge_pdfs(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_remove_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_remove_password(`inputPath`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_rotate_pdf(`inputPath`: RustBuffer.ByValue,`angleDegrees`: Int,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -878,6 +886,8 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_stirling_engine_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_checksum_func_add_password(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_compress_pdf_by_level(
     ): Short
     fun uniffi_stirling_engine_checksum_func_compress_pdf_custom(
@@ -893,6 +903,8 @@ internal interface UniffiLib : Library {
     fun uniffi_stirling_engine_checksum_func_merge_pdfs(
     ): Short
     fun uniffi_stirling_engine_checksum_func_remove_pages(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_remove_password(
     ): Short
     fun uniffi_stirling_engine_checksum_func_rotate_pdf(
     ): Short
@@ -915,6 +927,9 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
+    if (lib.uniffi_stirling_engine_checksum_func_add_password() != 58205.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_compress_pdf_by_level() != 47494.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -937,6 +952,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_remove_pages() != 12487.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_remove_password() != 64553.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_rotate_pdf() != 65286.toShort()) {
@@ -1297,6 +1315,21 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
     }
 }
         /**
+         * Adds standard-security-handler AES-128 password protection to the PDF at
+         * `input_path`. If `owner_password` is empty, it defaults to
+         * `user_password` (so either unlocks the file identically - the common
+         * case when the caller only wants "require a password to open").
+         */
+    @Throws(EngineException::class) fun `addPassword`(`inputPath`: kotlin.String, `userPassword`: kotlin.String, `ownerPassword`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_add_password(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`userPassword`),FfiConverterString.lower(`ownerPassword`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
          * Recompresses/downscales every image in the PDF at `input_path` at a
          * fixed quality `level` (1 = highest quality/least shrinkage, 9 = smallest
          * file/most shrinkage) and writes the result to `output_path`. Convenience
@@ -1404,6 +1437,21 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_remove_pages(
         FfiConverterString.lower(`inputPath`),FfiConverterSequenceUInt.lower(`pages`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Removes password protection from the PDF at `input_path`, given the
+         * correct password, and writes the plain PDF to `output_path`. Only the
+         * user password is checked (matches `add_password`'s default of owner ==
+         * user when no separate owner password is set).
+         */
+    @Throws(EngineException::class) fun `removePassword`(`inputPath`: kotlin.String, `password`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_remove_password(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`password`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     
