@@ -723,6 +723,14 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -738,6 +746,14 @@ internal interface UniffiLib : Library {
         
     }
 
+    fun uniffi_stirling_engine_fn_func_compress_pdf_by_level(`inputPath`: RustBuffer.ByValue,`level`: Byte,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_compress_pdf_custom(`inputPath`: RustBuffer.ByValue,`quality`: Byte,`scalePercent`: Byte,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_compress_pdf_to_target_size(`inputPath`: RustBuffer.ByValue,`targetBytes`: Long,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    fun uniffi_stirling_engine_fn_func_describe_images(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_extract_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_get_page_count(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -862,6 +878,14 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_stirling_engine_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_checksum_func_compress_pdf_by_level(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_compress_pdf_custom(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_compress_pdf_to_target_size(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_describe_images(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_extract_pages(
     ): Short
     fun uniffi_stirling_engine_checksum_func_get_page_count(
@@ -891,6 +915,18 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
+    if (lib.uniffi_stirling_engine_checksum_func_compress_pdf_by_level() != 47494.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_compress_pdf_custom() != 41996.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_compress_pdf_to_target_size() != 17494.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_describe_images() != 21719.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_extract_pages() != 39682.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -959,6 +995,29 @@ object NoPointer
 /**
  * @suppress
  */
+public object FfiConverterUByte: FfiConverter<UByte, Byte> {
+    override fun lift(value: Byte): UByte {
+        return value.toUByte()
+    }
+
+    override fun read(buf: ByteBuffer): UByte {
+        return lift(buf.get())
+    }
+
+    override fun lower(value: UByte): Byte {
+        return value.toByte()
+    }
+
+    override fun allocationSize(value: UByte) = 1UL
+
+    override fun write(value: UByte, buf: ByteBuffer) {
+        buf.put(value.toByte())
+    }
+}
+
+/**
+ * @suppress
+ */
 public object FfiConverterUInt: FfiConverter<UInt, Int> {
     override fun lift(value: Int): UInt {
         return value.toUInt()
@@ -999,6 +1058,29 @@ public object FfiConverterInt: FfiConverter<Int, Int> {
 
     override fun write(value: Int, buf: ByteBuffer) {
         buf.putInt(value)
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterULong: FfiConverter<ULong, Long> {
+    override fun lift(value: Long): ULong {
+        return value.toULong()
+    }
+
+    override fun read(buf: ByteBuffer): ULong {
+        return lift(buf.getLong())
+    }
+
+    override fun lower(value: ULong): Long {
+        return value.toLong()
+    }
+
+    override fun allocationSize(value: ULong) = 8UL
+
+    override fun write(value: ULong, buf: ByteBuffer) {
+        buf.putLong(value.toLong())
     }
 }
 
@@ -1214,6 +1296,67 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
         }
     }
 }
+        /**
+         * Recompresses/downscales every image in the PDF at `input_path` at a
+         * fixed quality `level` (1 = highest quality/least shrinkage, 9 = smallest
+         * file/most shrinkage) and writes the result to `output_path`. Convenience
+         * wrapper around [`compress_pdf_custom`] that couples quality and
+         * downscale together; use `compress_pdf_custom` to set them independently.
+         */
+    @Throws(EngineException::class) fun `compressPdfByLevel`(`inputPath`: kotlin.String, `level`: kotlin.UByte, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_compress_pdf_by_level(
+        FfiConverterString.lower(`inputPath`),FfiConverterUByte.lower(`level`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Recompresses/downscales every image in the PDF at `input_path` with
+         * independently chosen `quality` (1-100 JPEG quality) and `scale_percent`
+         * (1-100, percent of each image's original width/height to keep), writing
+         * the result to `output_path`.
+         */
+    @Throws(EngineException::class) fun `compressPdfCustom`(`inputPath`: kotlin.String, `quality`: kotlin.UByte, `scalePercent`: kotlin.UByte, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_compress_pdf_custom(
+        FfiConverterString.lower(`inputPath`),FfiConverterUByte.lower(`quality`),FfiConverterUByte.lower(`scalePercent`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Like [`compress_pdf_by_level`], but tries levels 1 through 9 in order and
+         * keeps the first result at or under `target_bytes`, falling back to the
+         * smallest (level 9) result if none hit the target. Returns the level used.
+         */
+    @Throws(EngineException::class) fun `compressPdfToTargetSize`(`inputPath`: kotlin.String, `targetBytes`: kotlin.ULong, `outputPath`: kotlin.String): kotlin.UByte {
+            return FfiConverterUByte.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_compress_pdf_to_target_size(
+        FfiConverterString.lower(`inputPath`),FfiConverterULong.lower(`targetBytes`),FfiConverterString.lower(`outputPath`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Diagnostic: one summary line per image XObject in the PDF (filter,
+         * color space, bit depth, dimensions, stored byte size). Used to explain
+         * why `compress_pdf_by_level` did or didn't shrink a given file.
+         */
+    @Throws(EngineException::class) fun `describeImages`(`path`: kotlin.String): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_describe_images(
+        FfiConverterString.lower(`path`),_status)
+}
+    )
+    }
+    
+
         /**
          * Keeps only the given 1-indexed `pages` from the PDF at `input_path`
          * (in document order, not `pages` order) and writes them to `output_path`.

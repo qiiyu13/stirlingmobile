@@ -11,6 +11,8 @@ crate-type = ["cdylib", "staticlib", "lib"]
 lopdf = "0.34"
 uniffi = { version = "0.28", features = ["cli"] }
 thiserror = "2.0"
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
+flate2 = "1.0"
 
 [[bin]]
 name = "uniffi-bindgen"
