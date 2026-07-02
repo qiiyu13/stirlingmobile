@@ -713,6 +713,10 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -728,8 +732,12 @@ internal interface UniffiLib : Library {
         
     }
 
+    fun uniffi_stirling_engine_fn_func_get_page_count(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
     fun uniffi_stirling_engine_fn_func_merge_pdfs(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_split_pdf(`inputPath`: RustBuffer.ByValue,`splitAfterPages`: RustBuffer.ByValue,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun ffi_stirling_engine_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun ffi_stirling_engine_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -842,7 +850,11 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_stirling_engine_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_checksum_func_get_page_count(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_merge_pdfs(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_split_pdf(
     ): Short
     fun ffi_stirling_engine_uniffi_contract_version(
     ): Int
@@ -861,7 +873,13 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
+    if (lib.uniffi_stirling_engine_checksum_func_get_page_count() != 45986.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_merge_pdfs() != 62406.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_split_pdf() != 21643.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -910,6 +928,29 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
  * @suppress
  * */
 object NoPointer
+
+/**
+ * @suppress
+ */
+public object FfiConverterUInt: FfiConverter<UInt, Int> {
+    override fun lift(value: Int): UInt {
+        return value.toUInt()
+    }
+
+    override fun read(buf: ByteBuffer): UInt {
+        return lift(buf.getInt())
+    }
+
+    override fun lower(value: UInt): Int {
+        return value.toInt()
+    }
+
+    override fun allocationSize(value: UInt) = 4UL
+
+    override fun write(value: UInt, buf: ByteBuffer) {
+        buf.putInt(value.toInt())
+    }
+}
 
 /**
  * @suppress
@@ -1074,6 +1115,34 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
 /**
  * @suppress
  */
+public object FfiConverterSequenceUInt: FfiConverterRustBuffer<List<kotlin.UInt>> {
+    override fun read(buf: ByteBuffer): List<kotlin.UInt> {
+        val len = buf.getInt()
+        return List<kotlin.UInt>(len) {
+            FfiConverterUInt.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<kotlin.UInt>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterUInt.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<kotlin.UInt>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterUInt.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.String>> {
     override fun read(buf: ByteBuffer): List<kotlin.String> {
         val len = buf.getInt()
@@ -1096,6 +1165,19 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
     }
 }
         /**
+         * Returns the page count of the PDF at `path`.
+         */
+    @Throws(EngineException::class) fun `getPageCount`(`path`: kotlin.String): kotlin.UInt {
+            return FfiConverterUInt.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_get_page_count(
+        FfiConverterString.lower(`path`),_status)
+}
+    )
+    }
+    
+
+        /**
          * Merges PDFs at `input_paths` (in order) into a single PDF written to `output_path`.
          */
     @Throws(EngineException::class) fun `mergePdfs`(`inputPaths`: List<kotlin.String>, `outputPath`: kotlin.String)
@@ -1105,6 +1187,21 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
         FfiConverterSequenceString.lower(`inputPaths`),FfiConverterString.lower(`outputPath`),_status)
 }
     
+    
+
+        /**
+         * Splits the PDF at `input_path` after each page number in `split_after_pages`
+         * (1-indexed, e.g. `[3, 6]` on a 10-page doc yields pages 1-3, 4-6, 7-10).
+         * Writes `part_1.pdf`, `part_2.pdf`, ... into `output_dir` and returns their paths.
+         */
+    @Throws(EngineException::class) fun `splitPdf`(`inputPath`: kotlin.String, `splitAfterPages`: List<kotlin.UInt>, `outputDir`: kotlin.String): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_split_pdf(
+        FfiConverterString.lower(`inputPath`),FfiConverterSequenceUInt.lower(`splitAfterPages`),FfiConverterString.lower(`outputDir`),_status)
+}
+    )
+    }
     
 
 
