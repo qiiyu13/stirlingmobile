@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,9 +30,10 @@ import com.stirlingmobile.ui.PasswordToolMode
 import com.stirlingmobile.ui.PasswordToolScreen
 import com.stirlingmobile.ui.PdfToImagesScreen
 import com.stirlingmobile.ui.RotateScreen
+import com.stirlingmobile.ui.SignatureStampScreen
 import com.stirlingmobile.ui.SplitScreen
 
-private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF }
+private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,13 +65,14 @@ private fun App() {
         Tool.PDF_TO_IMAGES -> PdfToImagesScreen()
         Tool.HTML_TO_PDF -> HtmlToPdfScreen()
         Tool.MARKDOWN_TO_PDF -> MarkdownToPdfScreen()
+        Tool.SIGNATURE_STAMP -> SignatureStampScreen()
     }
 }
 
 @Composable
 private fun HomeScreen(onSelect: (Tool) -> Unit) {
     Column(
-        modifier = Modifier.padding(24.dp),
+        modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("Stirling Mobile")
@@ -84,5 +88,6 @@ private fun HomeScreen(onSelect: (Tool) -> Unit) {
         Button(onClick = { onSelect(Tool.PDF_TO_IMAGES) }) { Text("PDF to Images") }
         Button(onClick = { onSelect(Tool.HTML_TO_PDF) }) { Text("HTML to PDF") }
         Button(onClick = { onSelect(Tool.MARKDOWN_TO_PDF) }) { Text("Markdown to PDF") }
+        Button(onClick = { onSelect(Tool.SIGNATURE_STAMP) }) { Text("Sign PDF") }
     }
 }

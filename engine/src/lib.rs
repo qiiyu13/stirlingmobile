@@ -10,6 +10,7 @@ mod rasterize;
 mod rotate;
 mod security;
 mod split;
+mod stamp;
 
 pub use compress::{compress_pdf_by_level, compress_pdf_custom, compress_pdf_to_target_size};
 pub use convert::convert_images_to_pdf;
@@ -21,3 +22,4 @@ pub use rasterize::convert_pdf_to_images;
 pub use rotate::rotate_pdf;
 pub use security::{add_password, remove_password};
 pub use split::split_pdf;
+pub use stamp::stamp_signature_image;

@@ -741,6 +741,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -786,6 +788,8 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_stirling_engine_fn_func_split_pdf(`inputPath`: RustBuffer.ByValue,`splitAfterPages`: RustBuffer.ByValue,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_stirling_engine_fn_func_stamp_signature_image(`inputPath`: RustBuffer.ByValue,`imagePath`: RustBuffer.ByValue,`pageNumber`: Int,`position`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun ffi_stirling_engine_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun ffi_stirling_engine_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -928,6 +932,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_split_pdf(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_stamp_signature_image(
+    ): Short
     fun ffi_stirling_engine_uniffi_contract_version(
     ): Int
     
@@ -988,6 +994,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_split_pdf() != 21643.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_stamp_signature_image() != 25805.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -1563,6 +1572,23 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
 }
     )
     }
+    
+
+        /**
+         * Stamps `image_path` (any format the `image` crate decodes; alpha
+         * transparency preserved via `/SMask`) onto 1-indexed `page_number` of the
+         * PDF at `input_path`, anchored at `position`
+         * (`top-left`/`top-right`/`bottom-left`/`bottom-right`/`center`), and
+         * writes the result to `output_path`. Visual stamp only - no cryptographic
+         * signature; see `security_sign`/`security_certify` for PKCS#12 signing.
+         */
+    @Throws(EngineException::class) fun `stampSignatureImage`(`inputPath`: kotlin.String, `imagePath`: kotlin.String, `pageNumber`: kotlin.UInt, `position`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_stamp_signature_image(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`imagePath`),FfiConverterUInt.lower(`pageNumber`),FfiConverterString.lower(`position`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
     
 
 
