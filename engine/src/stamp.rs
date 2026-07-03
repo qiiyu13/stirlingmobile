@@ -1,6 +1,7 @@
+use crate::content_util::page_size;
 use crate::EngineError;
 use image::GenericImageView;
-use lopdf::{dictionary, Dictionary, Document, Object, ObjectId, Stream};
+use lopdf::{dictionary, Document, Object, Stream};
 
 /// Margin between a preset-positioned stamp and the page edge, in points.
 const MARGIN: f32 = 24.0;
@@ -8,9 +9,6 @@ const MARGIN: f32 = 24.0;
 /// aspect ratio). ponytail: fixed size in v1, add a size slider if users
 /// need bigger/smaller signatures.
 const WIDTH_FRACTION: f32 = 0.3;
-/// Used when a page (or its inherited ancestors) has no `/MediaBox` -
-/// US Letter in points, the PDF spec default.
-const DEFAULT_MEDIA_BOX: (f32, f32, f32, f32) = (0.0, 0.0, 612.0, 792.0);
 
 /// Stamps `image_path` (any format the `image` crate decodes; alpha
 /// transparency preserved via `/SMask`) onto 1-indexed `page_number` of the
@@ -99,30 +97,6 @@ fn anchor(position: &str, page_w: f32, page_h: f32, stamp_w: f32, stamp_h: f32) 
         "center" => ((page_w - stamp_w) / 2.0, (page_h - stamp_h) / 2.0),
         _ => (page_w - MARGIN - stamp_w, MARGIN), // bottom-right, the default
     }
-}
-
-/// Page `/MediaBox` is inheritable (ISO 32000-1 §7.7.3.4) - walk `/Parent`
-/// until found, falling back to US Letter if the tree has none at all.
-fn page_size(doc: &Document, page_id: ObjectId) -> (f32, f32) {
-    let mut current = Some(page_id);
-    while let Some(id) = current {
-        let Ok(dict) = doc.get_dictionary(id) else { break };
-        if let Some(bbox) = media_box_of(dict) {
-            return bbox;
-        }
-        current = dict.get(b"Parent").ok().and_then(|o| o.as_reference().ok());
-    }
-    let (_, _, w, h) = DEFAULT_MEDIA_BOX;
-    (w, h)
-}
-
-fn media_box_of(dict: &Dictionary) -> Option<(f32, f32)> {
-    let arr = dict.get(b"MediaBox").ok()?.as_array().ok()?;
-    let x0 = arr.first()?.as_float().ok()?;
-    let y0 = arr.get(1)?.as_float().ok()?;
-    let x1 = arr.get(2)?.as_float().ok()?;
-    let y1 = arr.get(3)?.as_float().ok()?;
-    Some((x1 - x0, y1 - y0))
 }
 
 #[cfg(test)]

@@ -26,6 +26,8 @@ import com.stirlingmobile.ui.HtmlToPdfScreen
 import com.stirlingmobile.ui.ImagesToPdfScreen
 import com.stirlingmobile.ui.MarkdownToPdfScreen
 import com.stirlingmobile.ui.MergeScreen
+import com.stirlingmobile.ui.MetadataScreen
+import com.stirlingmobile.ui.PageNumbersScreen
 import com.stirlingmobile.ui.PagesToolMode
 import com.stirlingmobile.ui.PagesToolScreen
 import com.stirlingmobile.ui.PasswordToolMode
@@ -33,11 +35,13 @@ import com.stirlingmobile.ui.PasswordToolScreen
 import com.stirlingmobile.ui.PdfToImagesScreen
 import com.stirlingmobile.ui.RedactScreen
 import com.stirlingmobile.ui.RotateScreen
+import com.stirlingmobile.ui.SanitizeScreen
 import com.stirlingmobile.ui.SignPdfScreen
 import com.stirlingmobile.ui.SignatureStampScreen
 import com.stirlingmobile.ui.SplitScreen
+import com.stirlingmobile.ui.WatermarkScreen
 
-private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT }
+private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT, WATERMARK, PAGE_NUMBERS, SANITIZE, METADATA }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,6 +78,10 @@ private fun App() {
         Tool.GENERATE_CERTIFICATE -> GenerateCertificateScreen()
         Tool.REDACT -> RedactScreen()
         Tool.AUTO_REDACT -> AutoRedactScreen()
+        Tool.WATERMARK -> WatermarkScreen()
+        Tool.PAGE_NUMBERS -> PageNumbersScreen()
+        Tool.SANITIZE -> SanitizeScreen()
+        Tool.METADATA -> MetadataScreen()
     }
 }
 
@@ -101,5 +109,9 @@ private fun HomeScreen(onSelect: (Tool) -> Unit) {
         Button(onClick = { onSelect(Tool.GENERATE_CERTIFICATE) }) { Text("Generate signing certificate") }
         Button(onClick = { onSelect(Tool.REDACT) }) { Text("Redact PDF") }
         Button(onClick = { onSelect(Tool.AUTO_REDACT) }) { Text("Auto-Redact PDF") }
+        Button(onClick = { onSelect(Tool.WATERMARK) }) { Text("Add Watermark") }
+        Button(onClick = { onSelect(Tool.PAGE_NUMBERS) }) { Text("Add Page Numbers") }
+        Button(onClick = { onSelect(Tool.SANITIZE) }) { Text("Sanitize PDF") }
+        Button(onClick = { onSelect(Tool.METADATA) }) { Text("Edit Metadata") }
     }
 }

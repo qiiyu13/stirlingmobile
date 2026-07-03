@@ -1,0 +1,77 @@
+package com.stirlingmobile.ui
+
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+
+@Composable
+fun MetadataScreen(viewModel: MetadataViewModel = viewModel()) {
+    val context = LocalContext.current
+    val state by viewModel.state.collectAsState()
+
+    val pickPdf = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let { viewModel.onPdfPicked(context, it) }
+    }
+    val saveResult = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri: Uri? ->
+        if (uri != null) viewModel.onSaveDestinationChosen(context, uri)
+    }
+
+    Column(
+        modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Edit Metadata")
+
+        Button(onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
+            Text(if (state.pdfPath == null) "Select PDF" else "Select a different PDF")
+        }
+        Text(state.statusMessage)
+
+        val meta = state.metadata
+        if (meta != null) {
+            // key() so fields re-init from freshly extracted metadata per file.
+            key(state.pdfPath) {
+                var title by remember { mutableStateOf(meta.title ?: "") }
+                var author by remember { mutableStateOf(meta.author ?: "") }
+                var subject by remember { mutableStateOf(meta.subject ?: "") }
+                var keywords by remember { mutableStateOf(meta.keywords ?: "") }
+                var creator by remember { mutableStateOf(meta.creator ?: "") }
+                var producer by remember { mutableStateOf(meta.producer ?: "") }
+
+                OutlinedTextField(title, { title = it }, label = { Text("Title") })
+                OutlinedTextField(author, { author = it }, label = { Text("Author") })
+                OutlinedTextField(subject, { subject = it }, label = { Text("Subject") })
+                OutlinedTextField(keywords, { keywords = it }, label = { Text("Keywords") })
+                OutlinedTextField(creator, { creator = it }, label = { Text("Creator") })
+                OutlinedTextField(producer, { producer = it }, label = { Text("Producer") })
+
+                Button(onClick = {
+                    viewModel.onSaveMetadata(title, author, subject, keywords, creator, producer)
+                }) { Text("Apply") }
+            }
+        }
+
+        if (state.resultFilePath != null) {
+            Button(onClick = { saveResult.launch("metadata.pdf") }) { Text("Save PDF") }
+        }
+    }
+}

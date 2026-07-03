@@ -753,6 +753,18 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -780,7 +792,13 @@ internal interface UniffiLib : Library {
     ): Byte
     fun uniffi_stirling_engine_fn_func_content_auto_redact(`inputPath`: RustBuffer.ByValue,`pdfiumLibDir`: RustBuffer.ByValue,`patterns`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_content_page_numbers(`inputPath`: RustBuffer.ByValue,`position`: RustBuffer.ByValue,`format`: RustBuffer.ByValue,`startNumber`: Int,`fontSize`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_content_redact(`inputPath`: RustBuffer.ByValue,`redactions`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_content_watermark_image(`inputPath`: RustBuffer.ByValue,`imagePath`: RustBuffer.ByValue,`widthFraction`: Float,`rotationDegrees`: Float,`opacity`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_content_watermark_text(`inputPath`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,`fontSize`: Float,`rotationDegrees`: Float,`opacity`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_convert_images_to_pdf(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -798,11 +816,17 @@ internal interface UniffiLib : Library {
     ): Int
     fun uniffi_stirling_engine_fn_func_merge_pdfs(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_metadata_edit(`inputPath`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`author`: RustBuffer.ByValue,`subject`: RustBuffer.ByValue,`keywords`: RustBuffer.ByValue,`creator`: RustBuffer.ByValue,`producer`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_metadata_extract(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_remove_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_remove_password(`inputPath`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_rotate_pdf(`inputPath`: RustBuffer.ByValue,`angleDegrees`: Int,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_security_sanitize(`inputPath`: RustBuffer.ByValue,`removeJavascript`: Byte,`removeEmbeddedFiles`: Byte,`removeMetadata`: Byte,`removeLinks`: Byte,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_sign_pdf(`inputPath`: RustBuffer.ByValue,`pfxPath`: RustBuffer.ByValue,`pfxPassword`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -934,7 +958,13 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_content_auto_redact(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_content_page_numbers(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_content_redact(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_content_watermark_image(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_content_watermark_text(
     ): Short
     fun uniffi_stirling_engine_checksum_func_convert_images_to_pdf(
     ): Short
@@ -952,11 +982,17 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_merge_pdfs(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_metadata_edit(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_metadata_extract(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_remove_pages(
     ): Short
     fun uniffi_stirling_engine_checksum_func_remove_password(
     ): Short
     fun uniffi_stirling_engine_checksum_func_rotate_pdf(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_security_sanitize(
     ): Short
     fun uniffi_stirling_engine_checksum_func_sign_pdf(
     ): Short
@@ -999,7 +1035,16 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_stirling_engine_checksum_func_content_auto_redact() != 63557.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_stirling_engine_checksum_func_content_page_numbers() != 18195.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_content_redact() != 57853.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_content_watermark_image() != 51556.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_content_watermark_text() != 61156.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_convert_images_to_pdf() != 52008.toShort()) {
@@ -1026,6 +1071,12 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_stirling_engine_checksum_func_merge_pdfs() != 62406.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_stirling_engine_checksum_func_metadata_edit() != 8223.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_metadata_extract() != 13550.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_remove_pages() != 12487.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1033,6 +1084,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_rotate_pdf() != 65286.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_security_sanitize() != 65077.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_sign_pdf() != 64097.toShort()) {
@@ -1209,6 +1263,29 @@ public object FfiConverterFloat: FfiConverter<Float, Float> {
 /**
  * @suppress
  */
+public object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
+    override fun lift(value: Byte): Boolean {
+        return value.toInt() != 0
+    }
+
+    override fun read(buf: ByteBuffer): Boolean {
+        return lift(buf.get())
+    }
+
+    override fun lower(value: Boolean): Byte {
+        return if (value) 1.toByte() else 0.toByte()
+    }
+
+    override fun allocationSize(value: Boolean) = 1UL
+
+    override fun write(value: Boolean, buf: ByteBuffer) {
+        buf.put(lower(value))
+    }
+}
+
+/**
+ * @suppress
+ */
 public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
     // Note: we don't inherit from FfiConverterRustBuffer, because we use a
     // special encoding when lowering/lifting.  We can use `RustBuffer.len` to
@@ -1260,6 +1337,65 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
         val byteBuf = toUtf8(value)
         buf.putInt(byteBuf.limit())
         buf.put(byteBuf)
+    }
+}
+
+
+
+/**
+ * The document `/Info` fields. A field is `None` when the PDF doesn't set it.
+ */
+data class PdfMetadata (
+    var `title`: kotlin.String?, 
+    var `author`: kotlin.String?, 
+    var `subject`: kotlin.String?, 
+    var `keywords`: kotlin.String?, 
+    var `creator`: kotlin.String?, 
+    var `producer`: kotlin.String?, 
+    var `creationDate`: kotlin.String?, 
+    var `modDate`: kotlin.String?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypePdfMetadata: FfiConverterRustBuffer<PdfMetadata> {
+    override fun read(buf: ByteBuffer): PdfMetadata {
+        return PdfMetadata(
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: PdfMetadata) = (
+            FfiConverterOptionalString.allocationSize(value.`title`) +
+            FfiConverterOptionalString.allocationSize(value.`author`) +
+            FfiConverterOptionalString.allocationSize(value.`subject`) +
+            FfiConverterOptionalString.allocationSize(value.`keywords`) +
+            FfiConverterOptionalString.allocationSize(value.`creator`) +
+            FfiConverterOptionalString.allocationSize(value.`producer`) +
+            FfiConverterOptionalString.allocationSize(value.`creationDate`) +
+            FfiConverterOptionalString.allocationSize(value.`modDate`)
+    )
+
+    override fun write(value: PdfMetadata, buf: ByteBuffer) {
+            FfiConverterOptionalString.write(value.`title`, buf)
+            FfiConverterOptionalString.write(value.`author`, buf)
+            FfiConverterOptionalString.write(value.`subject`, buf)
+            FfiConverterOptionalString.write(value.`keywords`, buf)
+            FfiConverterOptionalString.write(value.`creator`, buf)
+            FfiConverterOptionalString.write(value.`producer`, buf)
+            FfiConverterOptionalString.write(value.`creationDate`, buf)
+            FfiConverterOptionalString.write(value.`modDate`, buf)
     }
 }
 
@@ -1409,6 +1545,38 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
 
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?> {
+    override fun read(buf: ByteBuffer): kotlin.String? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterString.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.String?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterString.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.String?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterString.write(value, buf)
+        }
+    }
 }
 
 
@@ -1595,6 +1763,21 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     
 
         /**
+         * Draw a page number on each page. `position` is one of
+         * `bottom-center` (default), `bottom-left`, `bottom-right`, `top-left`,
+         * `top-center`, `top-right`. `start_number` is the value shown on the first
+         * page (usually 1). Numbers are drawn in black Helvetica at `font_size`.
+         */
+    @Throws(EngineException::class) fun `contentPageNumbers`(`inputPath`: kotlin.String, `position`: kotlin.String, `format`: kotlin.String, `startNumber`: kotlin.UInt, `fontSize`: kotlin.Float, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_page_numbers(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`position`),FfiConverterString.lower(`format`),FfiConverterUInt.lower(`startNumber`),FfiConverterFloat.lower(`fontSize`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
          * True content removal (not overlay): any text-show operator whose
          * rendered position falls inside a redaction rectangle is dropped from
          * the page's content stream entirely, so the text is gone from copy/paste
@@ -1606,6 +1789,34 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_redact(
         FfiConverterString.lower(`inputPath`),FfiConverterSequenceTypeRedactionArea.lower(`redactions`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Tile the image at `image_path` across every page, each copy sized to
+         * `width_fraction` of the page width (aspect ratio preserved), rotated
+         * `rotation_degrees` counter-clockwise, at `opacity` (0..=1).
+         */
+    @Throws(EngineException::class) fun `contentWatermarkImage`(`inputPath`: kotlin.String, `imagePath`: kotlin.String, `widthFraction`: kotlin.Float, `rotationDegrees`: kotlin.Float, `opacity`: kotlin.Float, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_watermark_image(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`imagePath`),FfiConverterFloat.lower(`widthFraction`),FfiConverterFloat.lower(`rotationDegrees`),FfiConverterFloat.lower(`opacity`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Tile `text` diagonally across every page at `font_size`, rotated
+         * `rotation_degrees` counter-clockwise, at `opacity` (0..=1), writing the
+         * result to `output_path`.
+         */
+    @Throws(EngineException::class) fun `contentWatermarkText`(`inputPath`: kotlin.String, `text`: kotlin.String, `fontSize`: kotlin.Float, `rotationDegrees`: kotlin.Float, `opacity`: kotlin.Float, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_watermark_text(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`text`),FfiConverterFloat.lower(`fontSize`),FfiConverterFloat.lower(`rotationDegrees`),FfiConverterFloat.lower(`opacity`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     
@@ -1734,6 +1945,33 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     
 
         /**
+         * Overwrite `/Info` fields on the PDF at `input_path`, writing the result to
+         * `output_path`. Each argument is `Some(value)` to set the field (empty
+         * string clears it) or `None` to leave it unchanged.
+         */
+    @Throws(EngineException::class) fun `metadataEdit`(`inputPath`: kotlin.String, `title`: kotlin.String?, `author`: kotlin.String?, `subject`: kotlin.String?, `keywords`: kotlin.String?, `creator`: kotlin.String?, `producer`: kotlin.String?, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_metadata_edit(
+        FfiConverterString.lower(`inputPath`),FfiConverterOptionalString.lower(`title`),FfiConverterOptionalString.lower(`author`),FfiConverterOptionalString.lower(`subject`),FfiConverterOptionalString.lower(`keywords`),FfiConverterOptionalString.lower(`creator`),FfiConverterOptionalString.lower(`producer`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Read the `/Info` metadata from the PDF at `path`.
+         */
+    @Throws(EngineException::class) fun `metadataExtract`(`path`: kotlin.String): PdfMetadata {
+            return FfiConverterTypePdfMetadata.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_metadata_extract(
+        FfiConverterString.lower(`path`),_status)
+}
+    )
+    }
+    
+
+        /**
          * Removes the given 1-indexed `pages` from the PDF at `input_path` and
          * writes the rest to `output_path`.
          */
@@ -1771,6 +2009,19 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_rotate_pdf(
         FfiConverterString.lower(`inputPath`),FfiConverterInt.lower(`angleDegrees`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Sanitize the PDF at `input_path` into `output_path`. Each `remove_*` flag
+         * independently removes that class of content.
+         */
+    @Throws(EngineException::class) fun `securitySanitize`(`inputPath`: kotlin.String, `removeJavascript`: kotlin.Boolean, `removeEmbeddedFiles`: kotlin.Boolean, `removeMetadata`: kotlin.Boolean, `removeLinks`: kotlin.Boolean, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_security_sanitize(
+        FfiConverterString.lower(`inputPath`),FfiConverterBoolean.lower(`removeJavascript`),FfiConverterBoolean.lower(`removeEmbeddedFiles`),FfiConverterBoolean.lower(`removeMetadata`),FfiConverterBoolean.lower(`removeLinks`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     
