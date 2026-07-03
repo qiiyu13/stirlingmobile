@@ -9,6 +9,8 @@ pub enum EngineError {
     ReadFailed { path: String, reason: String },
     #[error("failed to write output pdf: {reason}")]
     WriteFailed { reason: String },
+    #[error("pdf has no AcroForm (no form fields)")]
+    NoAcroForm,
 }
 
 /// Merges PDFs at `input_paths` (in order) into a single PDF written to `output_path`.

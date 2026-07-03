@@ -767,6 +767,12 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -812,6 +818,12 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_extract_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_forms_fill(`path`: RustBuffer.ByValue,`values`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_forms_flatten(`path`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_forms_get_fields(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_generate_self_signed_pfx(`commonName`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_get_page_count(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -980,6 +992,12 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_extract_pages(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_forms_fill(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_forms_flatten(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_forms_get_fields(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_generate_self_signed_pfx(
     ): Short
     fun uniffi_stirling_engine_checksum_func_get_page_count(
@@ -1066,6 +1084,15 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_extract_pages() != 39682.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_forms_fill() != 26675.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_forms_flatten() != 56753.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_forms_get_fields() != 13657.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_generate_self_signed_pfx() != 10884.toShort()) {
@@ -1351,6 +1378,78 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
 
 
 
+data class FieldFill (
+    var `name`: kotlin.String, 
+    var `value`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFieldFill: FfiConverterRustBuffer<FieldFill> {
+    override fun read(buf: ByteBuffer): FieldFill {
+        return FieldFill(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FieldFill) = (
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterString.allocationSize(value.`value`)
+    )
+
+    override fun write(value: FieldFill, buf: ByteBuffer) {
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterString.write(value.`value`, buf)
+    }
+}
+
+
+
+data class FormField (
+    var `name`: kotlin.String, 
+    var `fieldType`: kotlin.String, 
+    var `value`: kotlin.String?, 
+    var `page`: kotlin.UInt
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFormField: FfiConverterRustBuffer<FormField> {
+    override fun read(buf: ByteBuffer): FormField {
+        return FormField(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterUInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FormField) = (
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterString.allocationSize(value.`fieldType`) +
+            FfiConverterOptionalString.allocationSize(value.`value`) +
+            FfiConverterUInt.allocationSize(value.`page`)
+    )
+
+    override fun write(value: FormField, buf: ByteBuffer) {
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterString.write(value.`fieldType`, buf)
+            FfiConverterOptionalString.write(value.`value`, buf)
+            FfiConverterUInt.write(value.`page`, buf)
+    }
+}
+
+
+
 /**
  * OCR results for a single page. `page_index` is 0-based in document order.
  */
@@ -1578,6 +1677,12 @@ sealed class EngineException: kotlin.Exception() {
             get() = "reason=${ `reason` }"
     }
     
+    class NoAcroForm(
+        ) : EngineException() {
+        override val message
+            get() = ""
+    }
+    
 
     companion object ErrorHandler : UniffiRustCallStatusErrorHandler<EngineException> {
         override fun lift(error_buf: RustBuffer.ByValue): EngineException = FfiConverterTypeEngineError.lift(error_buf)
@@ -1602,6 +1707,7 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
             3 -> EngineException.WriteFailed(
                 FfiConverterString.read(buf),
                 )
+            4 -> EngineException.NoAcroForm()
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
         }
     }
@@ -1623,6 +1729,10 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
                 4UL
                 + FfiConverterString.allocationSize(value.`reason`)
             )
+            is EngineException.NoAcroForm -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
         }
     }
 
@@ -1641,6 +1751,10 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
             is EngineException.WriteFailed -> {
                 buf.putInt(3)
                 FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is EngineException.NoAcroForm -> {
+                buf.putInt(4)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
@@ -1732,6 +1846,62 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterString.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFieldFill: FfiConverterRustBuffer<List<FieldFill>> {
+    override fun read(buf: ByteBuffer): List<FieldFill> {
+        val len = buf.getInt()
+        return List<FieldFill>(len) {
+            FfiConverterTypeFieldFill.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FieldFill>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFieldFill.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FieldFill>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFieldFill.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFormField: FfiConverterRustBuffer<List<FormField>> {
+    override fun read(buf: ByteBuffer): List<FormField> {
+        val len = buf.getInt()
+        return List<FormField>(len) {
+            FfiConverterTypeFormField.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FormField>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFormField.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FormField>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFormField.write(it, buf)
         }
     }
 }
@@ -2057,6 +2227,42 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
         FfiConverterString.lower(`inputPath`),FfiConverterSequenceUInt.lower(`pages`),FfiConverterString.lower(`outputPath`),_status)
 }
     
+    
+
+    @Throws(EngineException::class) fun `formsFill`(`path`: kotlin.String, `values`: List<FieldFill>, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_forms_fill(
+        FfiConverterString.lower(`path`),FfiConverterSequenceTypeFieldFill.lower(`values`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Flatten widget annotations into page content. For each widget with an
+         * `/AP/N` appearance stream, wraps the stream as a Form XObject and inserts
+         * a `Do` command at the front of the page content, positioned by the widget's
+         * `/Rect`. Widgets without appearance streams are silently left in place.
+         *
+         * # ponytail: only handles /AP/N (normal appearance); /AP/R and /AP/D ignored.
+         */
+    @Throws(EngineException::class) fun `formsFlatten`(`path`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_forms_flatten(
+        FfiConverterString.lower(`path`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+    @Throws(EngineException::class) fun `formsGetFields`(`path`: kotlin.String): List<FormField> {
+            return FfiConverterSequenceTypeFormField.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_forms_get_fields(
+        FfiConverterString.lower(`path`),_status)
+}
+    )
+    }
     
 
         /**
