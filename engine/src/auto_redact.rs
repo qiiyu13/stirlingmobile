@@ -72,28 +72,39 @@ fn find_matches(input_path: &str, pdfium_lib_dir: &str, regexes: &[Regex]) -> Re
             path: input_path.to_string(),
             reason: format!("failed to read text on page {}: {e}", index + 1),
         })?;
-        let full = text.all();
-        // Assumes chars() is in the same order/count as all() - true for
-        // simple left-to-right layouts, which covers the common case; may
-        // misalign for complex bidi/ligature text.
         let all_chars = text.chars();
         let chars: Vec<_> = all_chars.iter().collect();
-        let byte_offsets: Vec<usize> = full.char_indices().map(|(b, _)| b).collect();
+        // Build the searchable string FROM the glyph list, so a regex match's
+        // byte range maps back to exactly the glyphs that produced it. Using
+        // pdfium's text.all() instead assumed all() and chars() had the same
+        // count/order - false whenever a glyph carries no Unicode (FontAwesome
+        // icons, CMSY bullets) or a ligature/space differs, which shifted every
+        // later glyph's bounds and painted redaction boxes over the wrong text
+        // (e.g. a Typst/LaTeX CV whose contact line is full of icon glyphs).
+        // `char_start[i]` is glyph i's byte offset in `full`; a glyph with no
+        // Unicode contributes an empty range and is never matched.
+        let mut full = String::new();
+        let mut char_start: Vec<usize> = Vec::with_capacity(chars.len() + 1);
+        for c in &chars {
+            char_start.push(full.len());
+            if let Some(ch) = c.unicode_char() {
+                full.push(ch);
+            }
+        }
+        char_start.push(full.len());
 
         for regex in regexes {
             for m in regex.find_iter(&full) {
-                let start = byte_offsets.partition_point(|&b| b < m.start());
-                let end = byte_offsets.partition_point(|&b| b < m.end());
-                let Some(matched_chars) = chars.get(start..end) else { continue };
-                if matched_chars.is_empty() {
-                    continue;
-                }
-
                 let mut min_x = f32::INFINITY;
                 let mut max_x = f32::NEG_INFINITY;
                 let mut min_y = f32::INFINITY;
                 let mut max_y = f32::NEG_INFINITY;
-                for c in matched_chars {
+                for (i, c) in chars.iter().enumerate() {
+                    let (cs, ce) = (char_start[i], char_start[i + 1]);
+                    // Non-empty glyph whose byte span overlaps the match.
+                    if ce <= cs || cs >= m.end() || ce <= m.start() {
+                        continue;
+                    }
                     let Ok(bounds) = c.tight_bounds() else { continue };
                     min_x = min_x.min(bounds.left().value);
                     max_x = max_x.max(bounds.right().value);

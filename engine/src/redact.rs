@@ -295,6 +295,9 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
     let mut tlm = Matrix::IDENTITY;
     let mut font_size = 0.0f64;
     let mut leading = 0.0f64;
+    let mut char_spacing = 0.0f64; // Tc, text-space units (not em)
+    let mut word_spacing = 0.0f64; // Tw, single-byte code 32 only
+    let mut h_scale = 1.0f64; // Th = Tz/100
     let mut current_font: Option<&FontWidths> = None;
 
     let mut kept = Vec::with_capacity(operations.len());
@@ -334,6 +337,24 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
                 }
                 kept.push(op);
             }
+            "Tc" => {
+                if let Some(c) = op.operands.first().and_then(|o| o.as_float().ok()) {
+                    char_spacing = c as f64;
+                }
+                kept.push(op);
+            }
+            "Tw" => {
+                if let Some(w) = op.operands.first().and_then(|o| o.as_float().ok()) {
+                    word_spacing = w as f64;
+                }
+                kept.push(op);
+            }
+            "Tz" => {
+                if let Some(z) = op.operands.first().and_then(|o| o.as_float().ok()) {
+                    h_scale = z as f64 / 100.0;
+                }
+                kept.push(op);
+            }
             "Td" => {
                 if let Some((tx, ty)) = xy_operands(&op.operands) {
                     tlm = Matrix::translation(tx, ty).then(&tlm);
@@ -363,7 +384,8 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
             }
             "Tj" => {
                 if let Some(Object::String(bytes, _)) = op.operands.last_mut() {
-                    redact_string_bytes(bytes, 0.0, &tm, &ctm, font_size, current_font, AVG_GLYPH_WIDTH_EM, boxes);
+                    let adv = redact_string_bytes(bytes, 0.0, &tm, &ctm, font_size, current_font, AVG_GLYPH_WIDTH_EM, char_spacing, word_spacing, h_scale, boxes);
+                    tm = advance_tm(&tm, adv, font_size, h_scale);
                 }
                 kept.push(op);
             }
@@ -371,7 +393,8 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
                 tlm = Matrix::translation(0.0, -leading).then(&tlm);
                 tm = tlm;
                 if let Some(Object::String(bytes, _)) = op.operands.last_mut() {
-                    redact_string_bytes(bytes, 0.0, &tm, &ctm, font_size, current_font, AVG_GLYPH_WIDTH_EM, boxes);
+                    let adv = redact_string_bytes(bytes, 0.0, &tm, &ctm, font_size, current_font, AVG_GLYPH_WIDTH_EM, char_spacing, word_spacing, h_scale, boxes);
+                    tm = advance_tm(&tm, adv, font_size, h_scale);
                 }
                 kept.push(op);
             }
@@ -385,7 +408,7 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
                     for elem in arr.iter_mut() {
                         match elem {
                             Object::String(bytes, _) => {
-                                offset = redact_string_bytes(bytes, offset, &tm, &ctm, font_size, current_font, AVG_GLYPH_WIDTH_EM, boxes);
+                                offset = redact_string_bytes(bytes, offset, &tm, &ctm, font_size, current_font, AVG_GLYPH_WIDTH_EM, char_spacing, word_spacing, h_scale, boxes);
                             }
                             other => {
                                 if let Ok(num) = other.as_float() {
@@ -394,6 +417,7 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
                             }
                         }
                     }
+                    tm = advance_tm(&tm, offset, font_size, h_scale);
                 }
                 kept.push(op);
             }
@@ -401,6 +425,19 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
         }
     }
     kept
+}
+
+/// Advances the text matrix after a text-show operator by the horizontal
+/// displacement of the glyphs just shown, exactly as a PDF renderer does.
+/// `offset_em` is the em-space cursor returned by [`redact_string_bytes`]
+/// (glyph widths + Tc/Tw + TJ kerning); text-space displacement is
+/// `offset_em * font_size * Th`. Without this, multiple show operators
+/// sharing one `Td` (e.g. a line broken across font switches) would all be
+/// computed at the line's start x, so text far to the right gets mis-placed
+/// into an earlier redaction box.
+fn advance_tm(tm: &Matrix, offset_em: f64, font_size: f64, h_scale: f64) -> Matrix {
+    let tx = offset_em * font_size * h_scale;
+    Matrix::translation(tx, 0.0).then(tm)
 }
 
 fn xy_operands(operands: &[Object]) -> Option<(f64, f64)> {
@@ -434,6 +471,9 @@ fn redact_string_bytes(
     font_size: f64,
     font: Option<&FontWidths>,
     fallback_width_em: f64,
+    char_spacing: f64,
+    word_spacing: f64,
+    h_scale: f64,
     boxes: &[(f64, f64, f64, f64)],
 ) -> f64 {
     let mut pos = 0;
@@ -442,23 +482,38 @@ fn redact_string_bytes(
             Some(f) => f.glyph_at(bytes, pos, fallback_width_em),
             None => (fallback_width_em, 1),
         };
-        if char_hits_box(tm, ctm, font_size, offset, offset + width, boxes) {
+        // Capture the word-space check before blanking overwrites the byte.
+        let is_word_space = consumed == 1 && bytes[pos] == b' ';
+        // Hit-test the glyph's own ink span [offset, offset+width]; the
+        // spacing gap that follows isn't ink and shouldn't trigger a box.
+        if char_hits_box(tm, ctm, font_size, h_scale, offset, offset + width, boxes) {
             let end = (pos + consumed).min(bytes.len());
             for b in &mut bytes[pos..end] {
                 *b = b' ';
             }
         }
-        offset += width;
+        // Advance per PDF text-space formula: glyph width + Tc, plus Tw for a
+        // single-byte space (code 32). Tc/Tw are text-space units; offset is
+        // in em, so divide by font size. Th is applied via the scale matrix.
+        let mut advance = width;
+        if font_size > 0.0 {
+            advance += char_spacing / font_size;
+            if is_word_space {
+                advance += word_spacing / font_size;
+            }
+        }
+        offset += advance;
         pos += consumed.max(1);
     }
     offset
 }
 
-fn char_hits_box(tm: &Matrix, ctm: &Matrix, font_size: f64, x0: f64, x1: f64, boxes: &[(f64, f64, f64, f64)]) -> bool {
+#[allow(clippy::too_many_arguments)]
+fn char_hits_box(tm: &Matrix, ctm: &Matrix, font_size: f64, h_scale: f64, x0: f64, x1: f64, boxes: &[(f64, f64, f64, f64)]) -> bool {
     if font_size <= 0.0 {
         return false;
     }
-    let scale = Matrix::new(font_size, 0.0, 0.0, font_size, 0.0, 0.0);
+    let scale = Matrix::new(font_size * h_scale, 0.0, 0.0, font_size, 0.0, 0.0);
     let effective = scale.then(tm).then(ctm);
 
     let corners = [
@@ -763,6 +818,182 @@ mod tests {
         assert!(text.contains("Contact"), "word before the redacted one should survive: {text}");
         assert!(text.contains("Doe"), "word after the redacted one should survive: {text}");
         assert!(text.contains("here"), "rest of the line should survive: {text}");
+    }
+
+    /// Same page/font as `pdf_with_text_and_widths` (0.4em/glyph Courier) but
+    /// injects arbitrary text-state operators (`Tc`/`Tw`/`Tz`) between `Tf` and
+    /// the text `Td`/`Tj`, so a test can reproduce the browser/HTML-to-PDF
+    /// spacing that drove the real-world mis-redaction.
+    fn pdf_with_text_widths_and_state(path: &std::path::Path, text: &str, x: f64, y: f64, state: Vec<Operation>) {
+        let mut doc = Document::with_version("1.7");
+        let mut ops = vec![Operation::new("BT", vec![]), Operation::new("Tf", vec!["F1".into(), 24.0.into()])];
+        ops.extend(state);
+        ops.push(Operation::new("Td", vec![x.into(), y.into()]));
+        ops.push(Operation::new("Tj", vec![Object::string_literal(text)]));
+        ops.push(Operation::new("ET", vec![]));
+        let content = Content { operations: ops }.encode().unwrap();
+        let content_id = doc.add_object(lopdf::Stream::new(dictionary! {}, content));
+
+        let widths: Vec<Object> = (32..=126).map(|_| 400.into()).collect();
+        let font_id = doc.add_object(dictionary! {
+            "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Courier",
+            "FirstChar" => 32, "LastChar" => 126, "Widths" => widths,
+        });
+        let resources_id = doc.add_object(dictionary! {
+            "Font" => dictionary! { "F1" => Object::Reference(font_id) },
+        });
+
+        let pages_id = doc.new_object_id();
+        let page_id = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages_id,
+            "Contents" => content_id,
+            "Resources" => Object::Reference(resources_id),
+            "MediaBox" => vec![0.into(), 0.into(), 612.into(), 792.into()],
+        });
+        doc.objects.insert(
+            pages_id,
+            Object::Dictionary(dictionary! {
+                "Type" => "Pages", "Count" => 1, "Kids" => vec![Object::Reference(page_id)],
+            }),
+        );
+        let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
+        doc.trailer.set("Root", Object::Reference(catalog_id));
+        doc.save(path).unwrap();
+    }
+
+    /// Two text-show operators sharing a single `Td` (no reposition between
+    /// them) - the layout pdfTeX/LaTeX emit when a line breaks across font
+    /// switches. Builds `[Tj "Contact ", Tj "John"]` after one `Td`.
+    fn pdf_two_shows_one_td(path: &std::path::Path, a: &str, b: &str, x: f64, y: f64) {
+        let mut doc = Document::with_version("1.7");
+        let ops = vec![
+            Operation::new("BT", vec![]),
+            Operation::new("Tf", vec!["F1".into(), 24.0.into()]),
+            Operation::new("Td", vec![x.into(), y.into()]),
+            Operation::new("Tj", vec![Object::string_literal(a)]),
+            Operation::new("Tj", vec![Object::string_literal(b)]),
+            Operation::new("ET", vec![]),
+        ];
+        let content = Content { operations: ops }.encode().unwrap();
+        let content_id = doc.add_object(lopdf::Stream::new(dictionary! {}, content));
+        let widths: Vec<Object> = (32..=126).map(|_| 400.into()).collect();
+        let font_id = doc.add_object(dictionary! {
+            "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Courier",
+            "FirstChar" => 32, "LastChar" => 126, "Widths" => widths,
+        });
+        let resources_id = doc.add_object(dictionary! { "Font" => dictionary! { "F1" => Object::Reference(font_id) } });
+        let pages_id = doc.new_object_id();
+        let page_id = doc.add_object(dictionary! {
+            "Type" => "Page", "Parent" => pages_id, "Contents" => content_id,
+            "Resources" => Object::Reference(resources_id),
+            "MediaBox" => vec![0.into(), 0.into(), 612.into(), 792.into()],
+        });
+        doc.objects.insert(
+            pages_id,
+            Object::Dictionary(dictionary! { "Type" => "Pages", "Count" => 1, "Kids" => vec![Object::Reference(page_id)] }),
+        );
+        let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
+        doc.trailer.set("Root", Object::Reference(catalog_id));
+        doc.save(path).unwrap();
+    }
+
+    #[test]
+    fn redacts_second_show_op_without_dragging_in_a_later_run() {
+        // Regression: two Tj ops share one Td. "Contact " is 8 glyphs at
+        // 0.4em*24=9.6pt => 76.8pt, so "John" starts at x=126.8. A box on
+        // "John" must not touch "Contact". Before the text-matrix advance
+        // fix, the second Tj was computed at the line start (x=50), so a box
+        // meant for a later word blanked the wrong run entirely.
+        let input = temp_dir().join("redact_test_twoshow_input.pdf");
+        let output = temp_dir().join("redact_test_twoshow_output.pdf");
+        pdf_two_shows_one_td(&input, "Contact ", "John", 50.0, 700.0);
+
+        content_redact(
+            input.to_string_lossy().into_owned(),
+            vec![RedactionArea { page: 1, x: 126.0, y: 690.0, width: 40.0, height: 40.0 }],
+            output.to_string_lossy().into_owned(),
+        )
+        .unwrap();
+
+        let doc = Document::load(&output).unwrap();
+        let text = page_text(&doc);
+        assert!(!text.contains("John"), "second-run target should be redacted: {text}");
+        assert!(text.contains("Contact"), "earlier run sharing the Td should survive: {text}");
+    }
+
+    #[test]
+    fn redacts_correctly_with_char_spacing_tc() {
+        // Reproduces the real-world drift: with Tc=4 each glyph advances
+        // 9.6+4=13.6pt, so "John" (chars 8-11) spans x=[50+8*13.6,
+        // 50+11*13.6+9.6]=[158.8, 209.2]. Code that ignores Tc thinks each
+        // glyph is only 9.6pt wide and lands the box on the wrong characters.
+        let input = temp_dir().join("redact_test_tc_input.pdf");
+        let output = temp_dir().join("redact_test_tc_output.pdf");
+        pdf_with_text_widths_and_state(&input, "Contact John Doe here", 50.0, 700.0, vec![Operation::new("Tc", vec![4.0.into()])]);
+
+        content_redact(
+            input.to_string_lossy().into_owned(),
+            vec![RedactionArea { page: 1, x: 158.0, y: 690.0, width: 52.0, height: 40.0 }],
+            output.to_string_lossy().into_owned(),
+        )
+        .unwrap();
+
+        let doc = Document::load(&output).unwrap();
+        let text = page_text(&doc);
+        assert!(!text.contains("John"), "targeted word should be redacted: {text}");
+        assert!(text.contains("Contact"), "word before should survive: {text}");
+        assert!(text.contains("Doe"), "word after should survive: {text}");
+        assert!(text.contains("here"), "rest of line should survive: {text}");
+    }
+
+    #[test]
+    fn redacts_correctly_with_horizontal_scale_tz() {
+        // Tz=50 halves horizontal text space: glyph i starts at 50+i*9.6*0.5.
+        // "John" (i=8..11) spans [88.4, 107.6]. Code that ignores Th would put
+        // "John" near x=126 and blank "Contact" glyphs instead.
+        let input = temp_dir().join("redact_test_tz_input.pdf");
+        let output = temp_dir().join("redact_test_tz_output.pdf");
+        pdf_with_text_widths_and_state(&input, "Contact John Doe here", 50.0, 700.0, vec![Operation::new("Tz", vec![50.0.into()])]);
+
+        content_redact(
+            input.to_string_lossy().into_owned(),
+            vec![RedactionArea { page: 1, x: 88.0, y: 690.0, width: 20.0, height: 40.0 }],
+            output.to_string_lossy().into_owned(),
+        )
+        .unwrap();
+
+        let doc = Document::load(&output).unwrap();
+        let text = page_text(&doc);
+        assert!(!text.contains("John"), "targeted word should be redacted: {text}");
+        assert!(text.contains("Contact"), "word before should survive: {text}");
+        assert!(text.contains("Doe"), "word after should survive: {text}");
+        assert!(text.contains("here"), "rest of line should survive: {text}");
+    }
+
+    #[test]
+    fn redacts_correctly_with_word_spacing_tw() {
+        // Tw=10 widens only the space glyph (code 32) to 9.6+10=19.6pt, so
+        // "John" starts at 50 + 7*9.6 (Contact) + 19.6 (space) = 136.8 and
+        // spans [136.8, 175.2]. Code that ignores Tw underestimates the space
+        // and blanks "ohn D" instead of "John".
+        let input = temp_dir().join("redact_test_tw_input.pdf");
+        let output = temp_dir().join("redact_test_tw_output.pdf");
+        pdf_with_text_widths_and_state(&input, "Contact John Doe here", 50.0, 700.0, vec![Operation::new("Tw", vec![10.0.into()])]);
+
+        content_redact(
+            input.to_string_lossy().into_owned(),
+            vec![RedactionArea { page: 1, x: 136.0, y: 690.0, width: 40.0, height: 40.0 }],
+            output.to_string_lossy().into_owned(),
+        )
+        .unwrap();
+
+        let doc = Document::load(&output).unwrap();
+        let text = page_text(&doc);
+        assert!(!text.contains("John"), "targeted word should be redacted: {text}");
+        assert!(text.contains("Contact"), "word before should survive: {text}");
+        assert!(text.contains("Doe"), "word after should survive: {text}");
+        assert!(text.contains("here"), "rest of line should survive: {text}");
     }
 
     #[test]
