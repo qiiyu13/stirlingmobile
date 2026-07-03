@@ -5,8 +5,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -44,7 +45,7 @@ fun SignatureStampScreen(viewModel: SignatureStampViewModel = viewModel()) {
     ) { uri: Uri? -> if (uri != null) viewModel.onSaveDestinationChosen(context, uri) }
 
     Column(
-        modifier = Modifier.padding(24.dp),
+        modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("Sign PDF (stamp)")
@@ -68,11 +69,9 @@ fun SignatureStampScreen(viewModel: SignatureStampViewModel = viewModel()) {
                 label = { Text("Page, 1-${state.pageCount}") }
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                POSITIONS.forEach { candidate ->
-                    Button(onClick = { position = candidate }) {
-                        Text(if (position == candidate) "[${candidate}]" else candidate)
-                    }
+            POSITIONS.forEach { candidate ->
+                Button(onClick = { position = candidate }) {
+                    Text(if (position == candidate) "[${candidate}]" else candidate)
                 }
             }
 

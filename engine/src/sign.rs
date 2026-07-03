@@ -31,13 +31,45 @@ pub fn sign_pdf(
     pfx_password: String,
     output_path: String,
 ) -> Result<(), EngineError> {
+    sign_or_certify(input_path, pfx_path, pfx_password, None, output_path)
+}
+
+/// Like [`sign_pdf`], but as a *certifying* signature: sets `/DocMDP`
+/// permissions restricting what changes are allowed afterward.
+/// `permission` is 1 (no changes allowed), 2 (form fill-in and signing
+/// only), or 3 (form fill-in, signing, and commenting/annotating). Per
+/// ISO 32000-1 §12.8.2.2 a certifying signature must be the *first*
+/// signature in the document - this fails if the PDF already has one.
+#[uniffi::export]
+pub fn certify_pdf(
+    input_path: String,
+    pfx_path: String,
+    pfx_password: String,
+    permission: u8,
+    output_path: String,
+) -> Result<(), EngineError> {
+    if !(1..=3).contains(&permission) {
+        return Err(EngineError::WriteFailed {
+            reason: format!("invalid DocMDP permission {permission}: must be 1, 2, or 3"),
+        });
+    }
+    sign_or_certify(input_path, pfx_path, pfx_password, Some(permission), output_path)
+}
+
+fn sign_or_certify(
+    input_path: String,
+    pfx_path: String,
+    pfx_password: String,
+    certify_permission: Option<u8>,
+    output_path: String,
+) -> Result<(), EngineError> {
     let identity = load_pfx(&pfx_path, SecretString::from(pfx_password))?;
 
     let mut doc = Document::load(&input_path).map_err(|e| EngineError::ReadFailed {
         path: input_path,
         reason: e.to_string(),
     })?;
-    add_signature_placeholder(&mut doc)?;
+    add_signature_placeholder(&mut doc, certify_permission)?;
 
     let mut buffer = Vec::new();
     doc.save_to(&mut Cursor::new(&mut buffer)).map_err(|e| EngineError::WriteFailed {
@@ -88,28 +120,85 @@ pub fn sign_pdf(
 /// Inserts an unsigned `/Sig` dictionary (with placeholder `/Contents` and
 /// `/ByteRange`) plus an invisible signature field widget on page 1,
 /// wiring it into `/AcroForm` (merging with an existing one if present so
-/// pre-existing form fields aren't clobbered).
-fn add_signature_placeholder(doc: &mut Document) -> Result<(), EngineError> {
+/// pre-existing form fields aren't clobbered). If `certify_permission` is
+/// set, also wires up the `/DocMDP` `/Reference` transform and catalog
+/// `/Perms` - and refuses if the PDF already has a signature field, since
+/// a certifying signature must be the document's first (ISO 32000-1
+/// §12.8.2.2).
+fn add_signature_placeholder(doc: &mut Document, certify_permission: Option<u8>) -> Result<(), EngineError> {
     let page_id = *doc.get_pages().get(&1).ok_or_else(|| EngineError::WriteFailed {
         reason: "PDF has no pages to sign".to_string(),
     })?;
 
+    let catalog_id = doc
+        .trailer
+        .get(b"Root")
+        .ok()
+        .and_then(|o| o.as_reference().ok())
+        .ok_or_else(|| EngineError::WriteFailed {
+            reason: "PDF has no document catalog".to_string(),
+        })?;
+
+    let existing_acroform: Option<ObjectId> = doc
+        .get_dictionary(catalog_id)
+        .ok()
+        .and_then(|d| d.get(b"AcroForm").ok())
+        .and_then(|o| o.as_reference().ok());
+
+    if certify_permission.is_some() {
+        if let Some(acroform_id) = existing_acroform {
+            let has_signature_field = doc
+                .get_dictionary(acroform_id)
+                .ok()
+                .and_then(|d| d.get(b"Fields").ok())
+                .and_then(|o| o.as_array().ok())
+                .map(|fields| {
+                    fields.iter().any(|f| {
+                        f.as_reference()
+                            .ok()
+                            .and_then(|id| doc.get_dictionary(id).ok())
+                            .and_then(|d| d.get(b"FT").ok())
+                            .and_then(|o| o.as_name().ok())
+                            == Some(b"Sig")
+                    })
+                })
+                .unwrap_or(false);
+            if has_signature_field {
+                return Err(EngineError::WriteFailed {
+                    reason: "PDF already has a signature; a certifying signature must be the first one in the document".to_string(),
+                });
+            }
+        }
+    }
+
     let sig_id = doc.new_object_id();
-    doc.objects.insert(
-        sig_id,
-        Object::Dictionary(dictionary! {
-            "Type" => "Sig",
-            "Filter" => "Adobe.PPKLite",
-            "SubFilter" => "adbe.pkcs7.detached",
-            "ByteRange" => vec![
-                0.into(),
-                Object::Integer(BYTE_RANGE_SENTINEL),
-                Object::Integer(BYTE_RANGE_SENTINEL),
-                Object::Integer(BYTE_RANGE_SENTINEL),
-            ],
-            "Contents" => Object::String(vec![0u8; CONTENTS_PLACEHOLDER_BYTES], StringFormat::Hexadecimal),
-        }),
-    );
+    let mut sig_dict = dictionary! {
+        "Type" => "Sig",
+        "Filter" => "Adobe.PPKLite",
+        "SubFilter" => "adbe.pkcs7.detached",
+        "ByteRange" => vec![
+            0.into(),
+            Object::Integer(BYTE_RANGE_SENTINEL),
+            Object::Integer(BYTE_RANGE_SENTINEL),
+            Object::Integer(BYTE_RANGE_SENTINEL),
+        ],
+        "Contents" => Object::String(vec![0u8; CONTENTS_PLACEHOLDER_BYTES], StringFormat::Hexadecimal),
+    };
+    if let Some(permission) = certify_permission {
+        sig_dict.set(
+            "Reference",
+            vec![Object::Dictionary(dictionary! {
+                "Type" => "SigRef",
+                "TransformMethod" => "DocMDP",
+                "TransformParams" => dictionary! {
+                    "Type" => "TransformParams",
+                    "P" => permission as i64,
+                    "V" => "1.2",
+                },
+            })],
+        );
+    }
+    doc.objects.insert(sig_id, Object::Dictionary(sig_dict));
 
     let widget_id = doc.new_object_id();
     doc.objects.insert(
@@ -138,21 +227,6 @@ fn add_signature_placeholder(doc: &mut Document) -> Result<(), EngineError> {
         page_dict.set("Annots", annots);
     }
 
-    let catalog_id = doc
-        .trailer
-        .get(b"Root")
-        .ok()
-        .and_then(|o| o.as_reference().ok())
-        .ok_or_else(|| EngineError::WriteFailed {
-            reason: "PDF has no document catalog".to_string(),
-        })?;
-
-    let existing_acroform: Option<ObjectId> = doc
-        .get_dictionary(catalog_id)
-        .ok()
-        .and_then(|d| d.get(b"AcroForm").ok())
-        .and_then(|o| o.as_reference().ok());
-
     if let Some(acroform_id) = existing_acroform {
         let mut fields = doc
             .get_dictionary(acroform_id)
@@ -173,6 +247,12 @@ fn add_signature_placeholder(doc: &mut Document) -> Result<(), EngineError> {
         });
         if let Ok(catalog_dict) = doc.get_dictionary_mut(catalog_id) {
             catalog_dict.set("AcroForm", Object::Reference(acroform_id));
+        }
+    }
+
+    if certify_permission.is_some() {
+        if let Ok(catalog_dict) = doc.get_dictionary_mut(catalog_id) {
+            catalog_dict.set("Perms", dictionary! { "DocMDP" => Object::Reference(sig_id) });
         }
     }
 
@@ -425,6 +505,98 @@ mod tests {
         std::fs::write(&output, &bytes).unwrap();
 
         assert!(!pdfsig_says_valid(&output), "tampering after signing should invalidate the signature");
+    }
+
+    #[test]
+    fn certifies_pdf_and_pdfsig_verifies_it() {
+        let dir = temp_dir();
+        let input = dir.join("certify_test_input.pdf");
+        let pfx = dir.join("certify_test_identity.pfx");
+        let output = dir.join("certify_test_output.pdf");
+        one_page_pdf(&input);
+        let (pfx_bytes, password) = make_test_pfx();
+        std::fs::write(&pfx, &pfx_bytes).unwrap();
+
+        certify_pdf(
+            input.to_string_lossy().into_owned(),
+            pfx.to_string_lossy().into_owned(),
+            password.to_string(),
+            1,
+            output.to_string_lossy().into_owned(),
+        )
+        .unwrap();
+
+        assert!(pdfsig_says_valid(&output), "pdfsig did not report a valid certifying signature");
+
+        // pdfsig's plain output doesn't surface DocMDP/certification info at
+        // all, so check the /Perms/DocMDP wiring structurally via qpdf - an
+        // independent reparse/re-serialize, not our own lopdf reading back
+        // what we wrote.
+        let qdf = dir.join("certify_test_output.qdf");
+        let status = Command::new("qpdf")
+            .args(["--qdf", "--object-streams=disable"])
+            .arg(&output)
+            .arg(&qdf)
+            .status()
+            .unwrap();
+        // qpdf exits 3 for "succeeded with warnings" (e.g. our minimal test
+        // fixture page has no /Resources dict, unrelated to signing) - only
+        // exit 2 (error) is a real failure here.
+        assert_ne!(status.code(), Some(2), "qpdf failed to reparse the certified PDF");
+        let dumped = String::from_utf8_lossy(&std::fs::read(&qdf).unwrap()).into_owned();
+        assert!(dumped.contains("/DocMDP"), "catalog /Perms /DocMDP missing:\n{dumped}");
+        assert!(dumped.contains("/TransformMethod /DocMDP"), "Sig /Reference DocMDP transform missing:\n{dumped}");
+        assert!(dumped.contains("/P 1"), "TransformParams /P value missing:\n{dumped}");
+    }
+
+    #[test]
+    fn rejects_second_certifying_signature() {
+        let dir = temp_dir();
+        let input = dir.join("certify_test_second_input.pdf");
+        let once = dir.join("certify_test_second_once.pdf");
+        let twice = dir.join("certify_test_second_twice.pdf");
+        let pfx = dir.join("certify_test_second_identity.pfx");
+        one_page_pdf(&input);
+        let (pfx_bytes, password) = make_test_pfx();
+        std::fs::write(&pfx, &pfx_bytes).unwrap();
+
+        certify_pdf(
+            input.to_string_lossy().into_owned(),
+            pfx.to_string_lossy().into_owned(),
+            password.to_string(),
+            1,
+            once.to_string_lossy().into_owned(),
+        )
+        .unwrap();
+
+        let result = certify_pdf(
+            once.to_string_lossy().into_owned(),
+            pfx.to_string_lossy().into_owned(),
+            password.to_string(),
+            1,
+            twice.to_string_lossy().into_owned(),
+        );
+        assert!(result.is_err(), "certifying an already-signed PDF should be rejected");
+    }
+
+    #[test]
+    fn rejects_invalid_permission() {
+        let dir = temp_dir();
+        let input = dir.join("certify_test_badperm_input.pdf");
+        let pfx = dir.join("certify_test_badperm_identity.pfx");
+        let output = dir.join("certify_test_badperm_output.pdf");
+        one_page_pdf(&input);
+        let (pfx_bytes, password) = make_test_pfx();
+        std::fs::write(&pfx, &pfx_bytes).unwrap();
+
+        let result = certify_pdf(
+            input.to_string_lossy().into_owned(),
+            pfx.to_string_lossy().into_owned(),
+            password.to_string(),
+            9,
+            output.to_string_lossy().into_owned(),
+        );
+        assert!(result.is_err());
     }
 
     #[test]

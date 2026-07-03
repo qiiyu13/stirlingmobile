@@ -82,7 +82,7 @@ class SplitViewModel : ViewModel() {
                     val file = File(path)
                     val dest = treeDir.createFile("application/pdf", file.nameWithoutExtension)
                         ?: continue
-                    context.contentResolver.openOutputStream(dest.uri)!!.use { output ->
+                    context.contentResolver.openOutputStream(dest.uri, "wt")!!.use { output ->
                         file.inputStream().use { input -> input.copyTo(output) }
                     }
                 }

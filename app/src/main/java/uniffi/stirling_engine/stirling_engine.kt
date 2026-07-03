@@ -747,6 +747,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -763,6 +765,8 @@ internal interface UniffiLib : Library {
     }
 
     fun uniffi_stirling_engine_fn_func_add_password(`inputPath`: RustBuffer.ByValue,`userPassword`: RustBuffer.ByValue,`ownerPassword`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_certify_pdf(`inputPath`: RustBuffer.ByValue,`pfxPath`: RustBuffer.ByValue,`pfxPassword`: RustBuffer.ByValue,`permission`: Byte,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_compress_pdf_by_level(`inputPath`: RustBuffer.ByValue,`level`: Byte,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -912,6 +916,8 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_stirling_engine_checksum_func_add_password(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_certify_pdf(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_compress_pdf_by_level(
     ): Short
     fun uniffi_stirling_engine_checksum_func_compress_pdf_custom(
@@ -964,6 +970,9 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_stirling_engine_checksum_func_add_password() != 58205.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_certify_pdf() != 59812.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_compress_pdf_by_level() != 47494.toShort()) {
@@ -1379,6 +1388,23 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_add_password(
         FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`userPassword`),FfiConverterString.lower(`ownerPassword`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Like [`sign_pdf`], but as a *certifying* signature: sets `/DocMDP`
+         * permissions restricting what changes are allowed afterward.
+         * `permission` is 1 (no changes allowed), 2 (form fill-in and signing
+         * only), or 3 (form fill-in, signing, and commenting/annotating). Per
+         * ISO 32000-1 §12.8.2.2 a certifying signature must be the *first*
+         * signature in the document - this fails if the PDF already has one.
+         */
+    @Throws(EngineException::class) fun `certifyPdf`(`inputPath`: kotlin.String, `pfxPath`: kotlin.String, `pfxPassword`: kotlin.String, `permission`: kotlin.UByte, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_certify_pdf(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`pfxPath`),FfiConverterString.lower(`pfxPassword`),FfiConverterUByte.lower(`permission`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     

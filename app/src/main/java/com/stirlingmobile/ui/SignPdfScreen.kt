@@ -6,6 +6,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -27,6 +29,8 @@ fun SignPdfScreen(viewModel: SignPdfViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
 
     var pfxPassword by remember { mutableStateOf("") }
+    var certify by remember { mutableStateOf(false) }
+    var permission by remember { mutableStateOf<UByte>(1u) }
 
     val pickPdf = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -41,10 +45,14 @@ fun SignPdfScreen(viewModel: SignPdfViewModel = viewModel()) {
     ) { uri: Uri? -> if (uri != null) viewModel.onSaveDestinationChosen(context, uri) }
 
     Column(
-        modifier = Modifier.padding(24.dp),
+        modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Sign PDF (digital signature)")
+        Text(if (certify) "Certify PDF (digital signature)" else "Sign PDF (digital signature)")
+
+        Button(onClick = { certify = !certify }) {
+            Text(if (certify) "Switch to plain signature" else "Switch to certifying signature")
+        }
 
         Button(onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
             Text(if (state.pdfPath == null) "Select PDF" else "Select a different PDF")
@@ -66,8 +74,22 @@ fun SignPdfScreen(viewModel: SignPdfViewModel = viewModel()) {
                 visualTransformation = PasswordVisualTransformation()
             )
 
-            Button(onClick = { viewModel.onSignClicked(pfxPassword) }) {
-                Text("Sign")
+            if (certify) {
+                Text("Permission after certifying:")
+                val options = listOf(
+                    1.toUByte() to "No changes",
+                    2.toUByte() to "Form fill only",
+                    3.toUByte() to "Form fill + comments",
+                )
+                options.forEach { (value, label) ->
+                    Button(onClick = { permission = value }) {
+                        Text(if (permission == value) "[$label]" else label)
+                    }
+                }
+            }
+
+            Button(onClick = { viewModel.onSignClicked(pfxPassword, if (certify) permission else null) }) {
+                Text(if (certify) "Certify" else "Sign")
             }
         }
 

@@ -57,7 +57,7 @@ class PdfToImagesViewModel : ViewModel() {
                 paths.forEach { path ->
                     val file = File(path)
                     val doc = tree.createFile("image/png", file.nameWithoutExtension)!!
-                    context.contentResolver.openOutputStream(doc.uri)!!.use { output ->
+                    context.contentResolver.openOutputStream(doc.uri, "wt")!!.use { output ->
                         file.inputStream().use { it.copyTo(output) }
                     }
                 }

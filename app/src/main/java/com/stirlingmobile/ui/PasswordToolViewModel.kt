@@ -80,7 +80,7 @@ class PasswordToolViewModel(private val mode: PasswordToolMode) : ViewModel() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 File(path).inputStream().use { input ->
-                    context.contentResolver.openOutputStream(destination)!!.use { output ->
+                    context.contentResolver.openOutputStream(destination, "wt")!!.use { output ->
                         input.copyTo(output)
                     }
                 }

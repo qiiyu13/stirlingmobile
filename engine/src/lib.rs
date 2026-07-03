@@ -26,6 +26,6 @@ pub use pfx_generate::generate_self_signed_pfx;
 pub use rasterize::convert_pdf_to_images;
 pub use rotate::rotate_pdf;
 pub use security::{add_password, remove_password};
-pub use sign::sign_pdf;
+pub use sign::{certify_pdf, sign_pdf};
 pub use split::split_pdf;
 pub use stamp::stamp_signature_image;
