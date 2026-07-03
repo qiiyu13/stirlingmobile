@@ -1,5 +1,6 @@
 uniffi::setup_scaffolding!();
 
+mod auto_redact;
 mod cms_sign;
 mod compress;
 mod convert;
@@ -9,13 +10,15 @@ mod merge;
 mod pages;
 mod pfx;
 mod pfx_generate;
-mod rasterize;
+pub(crate) mod rasterize;
+pub(crate) mod redact;
 mod rotate;
 mod security;
 pub(crate) mod sign;
 mod split;
 mod stamp;
 
+pub use auto_redact::content_auto_redact;
 pub use compress::{compress_pdf_by_level, compress_pdf_custom, compress_pdf_to_target_size};
 pub use convert::convert_images_to_pdf;
 pub use info::{describe_images, get_page_count};
@@ -24,6 +27,7 @@ pub use merge::{merge_pdfs, EngineError};
 pub use pages::{extract_pages, remove_pages};
 pub use pfx_generate::generate_self_signed_pfx;
 pub use rasterize::convert_pdf_to_images;
+pub use redact::{content_redact, RedactionArea};
 pub use rotate::rotate_pdf;
 pub use security::{add_password, remove_password};
 pub use sign::{certify_pdf, sign_pdf};

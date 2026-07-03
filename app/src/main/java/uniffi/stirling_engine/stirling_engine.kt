@@ -749,6 +749,10 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -774,6 +778,10 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_stirling_engine_fn_func_compress_pdf_to_target_size(`inputPath`: RustBuffer.ByValue,`targetBytes`: Long,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    fun uniffi_stirling_engine_fn_func_content_auto_redact(`inputPath`: RustBuffer.ByValue,`pdfiumLibDir`: RustBuffer.ByValue,`patterns`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_content_redact(`inputPath`: RustBuffer.ByValue,`redactions`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_convert_images_to_pdf(`inputPaths`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_convert_markdown_to_html(`markdown`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -924,6 +932,10 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_compress_pdf_to_target_size(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_content_auto_redact(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_content_redact(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_convert_images_to_pdf(
     ): Short
     fun uniffi_stirling_engine_checksum_func_convert_markdown_to_html(
@@ -982,6 +994,12 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_compress_pdf_to_target_size() != 17494.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_content_auto_redact() != 63557.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_content_redact() != 57853.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_convert_images_to_pdf() != 52008.toShort()) {
@@ -1168,6 +1186,29 @@ public object FfiConverterULong: FfiConverter<ULong, Long> {
 /**
  * @suppress
  */
+public object FfiConverterFloat: FfiConverter<Float, Float> {
+    override fun lift(value: Float): Float {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Float {
+        return buf.getFloat()
+    }
+
+    override fun lower(value: Float): Float {
+        return value
+    }
+
+    override fun allocationSize(value: Float) = 4UL
+
+    override fun write(value: Float, buf: ByteBuffer) {
+        buf.putFloat(value)
+    }
+}
+
+/**
+ * @suppress
+ */
 public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
     // Note: we don't inherit from FfiConverterRustBuffer, because we use a
     // special encoding when lowering/lifting.  We can use `RustBuffer.len` to
@@ -1219,6 +1260,54 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
         val byteBuf = toUtf8(value)
         buf.putInt(byteBuf.limit())
         buf.put(byteBuf)
+    }
+}
+
+
+
+/**
+ * A rectangle to redact, in PDF page-space points (origin bottom-left,
+ * same coordinate system as the page's `/MediaBox`). `page` is 1-indexed.
+ */
+data class RedactionArea (
+    var `page`: kotlin.UInt, 
+    var `x`: kotlin.Float, 
+    var `y`: kotlin.Float, 
+    var `width`: kotlin.Float, 
+    var `height`: kotlin.Float
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRedactionArea: FfiConverterRustBuffer<RedactionArea> {
+    override fun read(buf: ByteBuffer): RedactionArea {
+        return RedactionArea(
+            FfiConverterUInt.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RedactionArea) = (
+            FfiConverterUInt.allocationSize(value.`page`) +
+            FfiConverterFloat.allocationSize(value.`x`) +
+            FfiConverterFloat.allocationSize(value.`y`) +
+            FfiConverterFloat.allocationSize(value.`width`) +
+            FfiConverterFloat.allocationSize(value.`height`)
+    )
+
+    override fun write(value: RedactionArea, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`page`, buf)
+            FfiConverterFloat.write(value.`x`, buf)
+            FfiConverterFloat.write(value.`y`, buf)
+            FfiConverterFloat.write(value.`width`, buf)
+            FfiConverterFloat.write(value.`height`, buf)
     }
 }
 
@@ -1377,6 +1466,34 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
         }
     }
 }
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List<RedactionArea>> {
+    override fun read(buf: ByteBuffer): List<RedactionArea> {
+        val len = buf.getInt()
+        return List<RedactionArea>(len) {
+            FfiConverterTypeRedactionArea.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<RedactionArea>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeRedactionArea.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<RedactionArea>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeRedactionArea.write(it, buf)
+        }
+    }
+}
         /**
          * Adds standard-security-handler AES-128 password protection to the PDF at
          * `input_path`. If `owner_password` is empty, it defaults to
@@ -1453,6 +1570,44 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
 }
     )
     }
+    
+
+        /**
+         * Finds text matching any of `patterns` and redacts it (see
+         * [`crate::redact::content_redact`] for what "redact" means here - true
+         * removal from the content stream, not just an overlay).
+         *
+         * Each pattern is either a named detector (`"email"`, `"phone_us"`,
+         * `"ssn"`, `"credit_card"`), an exact-text literal (`"text:<literal>"`,
+         * for users who don't know regex - matched verbatim, special chars
+         * escaped), or a caller-supplied `"regex:<pattern>"`.
+         * `pdfium_lib_dir` is `context.applicationInfo.nativeLibraryDir`, same as
+         * [`crate::convert_pdf_to_images`] - used to locate matched text on the
+         * page, since content-stream parsing alone can't do fuzzy text search.
+         */
+    @Throws(EngineException::class) fun `contentAutoRedact`(`inputPath`: kotlin.String, `pdfiumLibDir`: kotlin.String, `patterns`: List<kotlin.String>, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_auto_redact(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`pdfiumLibDir`),FfiConverterSequenceString.lower(`patterns`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * True content removal (not overlay): any text-show operator whose
+         * rendered position falls inside a redaction rectangle is dropped from
+         * the page's content stream entirely, so the text is gone from copy/paste
+         * and extraction, not just hidden under a box. A solid black rectangle is
+         * then painted over each area so the redaction is visible.
+         */
+    @Throws(EngineException::class) fun `contentRedact`(`inputPath`: kotlin.String, `redactions`: List<RedactionArea>, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_redact(
+        FfiConverterString.lower(`inputPath`),FfiConverterSequenceTypeRedactionArea.lower(`redactions`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
     
 
         /**

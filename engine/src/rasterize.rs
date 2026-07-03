@@ -53,7 +53,7 @@ pub fn convert_pdf_to_images(
     Ok(output_paths)
 }
 
-fn bind_pdfium(pdfium_lib_dir: &str) -> Result<Pdfium, EngineError> {
+pub(crate) fn bind_pdfium(pdfium_lib_dir: &str) -> Result<Pdfium, EngineError> {
     let bindings = Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path(pdfium_lib_dir))
         .map_err(|e| EngineError::ReadFailed {
             path: pdfium_lib_dir.to_string(),
