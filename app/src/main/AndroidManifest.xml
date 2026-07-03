@@ -2,6 +2,7 @@
 
     <application
         android:allowBackup="false"
+        android:largeHeap="true"
         android:icon="@android:mipmap/sym_def_app_icon"
         android:label="Stirling Mobile"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">

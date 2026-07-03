@@ -65,6 +65,19 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.14.0@aar")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("androidx.documentfile:documentfile:1.0.1")
+    // On-device OCR: PaddleOCR PP-OCRv5 mobile via the official ppocr-sdk
+    // (pure-Kotlin AAR built from PaddleOCR/deploy/ppocr-android, vendored in
+    // libs/). It runs det+rec on a Bitmap and returns text + boxes; Rust only
+    // overlays those as an invisible text layer. onnxruntime + OpenCV are the
+    // SDK's transitive engine deps.
+    implementation(files("libs/ppocr-sdk-release.aar"))
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.21.1")
+    // Official OpenCV (Maven Central since 4.9). The stale quickbirdstudios
+    // 4.5.3 AAR the SDK defaults to imports a dead libc++ symbol
+    // (__sfp_handle_exceptions) and crashes on modern devices; same org.opencv.*
+    // API, so this is a drop-in.
+    implementation("org.opencv:opencv:4.11.0")
+    implementation("androidx.core:core-ktx:1.15.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

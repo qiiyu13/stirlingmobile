@@ -765,6 +765,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -820,6 +822,8 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_stirling_engine_fn_func_metadata_extract(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_stirling_engine_fn_func_ocr_apply_text_layer(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_remove_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_remove_password(`inputPath`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -986,6 +990,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_metadata_extract(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_ocr_apply_text_layer(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_remove_pages(
     ): Short
     fun uniffi_stirling_engine_checksum_func_remove_password(
@@ -1075,6 +1081,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_metadata_extract() != 13550.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_ocr_apply_text_layer() != 54889.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_remove_pages() != 12487.toShort()) {
@@ -1337,6 +1346,98 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
         val byteBuf = toUtf8(value)
         buf.putInt(byteBuf.limit())
         buf.put(byteBuf)
+    }
+}
+
+
+
+/**
+ * OCR results for a single page. `page_index` is 0-based in document order.
+ */
+data class OcrPage (
+    var `pageIndex`: kotlin.UInt, 
+    var `imageWidth`: kotlin.Float, 
+    var `imageHeight`: kotlin.Float, 
+    var `words`: List<OcrWord>
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeOcrPage: FfiConverterRustBuffer<OcrPage> {
+    override fun read(buf: ByteBuffer): OcrPage {
+        return OcrPage(
+            FfiConverterUInt.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterSequenceTypeOcrWord.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: OcrPage) = (
+            FfiConverterUInt.allocationSize(value.`pageIndex`) +
+            FfiConverterFloat.allocationSize(value.`imageWidth`) +
+            FfiConverterFloat.allocationSize(value.`imageHeight`) +
+            FfiConverterSequenceTypeOcrWord.allocationSize(value.`words`)
+    )
+
+    override fun write(value: OcrPage, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`pageIndex`, buf)
+            FfiConverterFloat.write(value.`imageWidth`, buf)
+            FfiConverterFloat.write(value.`imageHeight`, buf)
+            FfiConverterSequenceTypeOcrWord.write(value.`words`, buf)
+    }
+}
+
+
+
+/**
+ * One recognized word. Coordinates are in image pixels with a top-left origin
+ * (Tesseract / Android bitmap convention), relative to the page image whose
+ * dimensions are given on the owning [`OcrPage`].
+ */
+data class OcrWord (
+    var `text`: kotlin.String, 
+    var `x`: kotlin.Float, 
+    var `y`: kotlin.Float, 
+    var `width`: kotlin.Float, 
+    var `height`: kotlin.Float
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeOcrWord: FfiConverterRustBuffer<OcrWord> {
+    override fun read(buf: ByteBuffer): OcrWord {
+        return OcrWord(
+            FfiConverterString.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: OcrWord) = (
+            FfiConverterString.allocationSize(value.`text`) +
+            FfiConverterFloat.allocationSize(value.`x`) +
+            FfiConverterFloat.allocationSize(value.`y`) +
+            FfiConverterFloat.allocationSize(value.`width`) +
+            FfiConverterFloat.allocationSize(value.`height`)
+    )
+
+    override fun write(value: OcrWord, buf: ByteBuffer) {
+            FfiConverterString.write(value.`text`, buf)
+            FfiConverterFloat.write(value.`x`, buf)
+            FfiConverterFloat.write(value.`y`, buf)
+            FfiConverterFloat.write(value.`width`, buf)
+            FfiConverterFloat.write(value.`height`, buf)
     }
 }
 
@@ -1631,6 +1732,62 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterString.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeOcrPage: FfiConverterRustBuffer<List<OcrPage>> {
+    override fun read(buf: ByteBuffer): List<OcrPage> {
+        val len = buf.getInt()
+        return List<OcrPage>(len) {
+            FfiConverterTypeOcrPage.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<OcrPage>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeOcrPage.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<OcrPage>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeOcrPage.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeOcrWord: FfiConverterRustBuffer<List<OcrWord>> {
+    override fun read(buf: ByteBuffer): List<OcrWord> {
+        val len = buf.getInt()
+        return List<OcrWord>(len) {
+            FfiConverterTypeOcrWord.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<OcrWord>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeOcrWord.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<OcrWord>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeOcrWord.write(it, buf)
         }
     }
 }
@@ -1969,6 +2126,20 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
 }
     )
     }
+    
+
+        /**
+         * Overlay an invisible OCR text layer onto `input_path` from `pages` and write
+         * the searchable PDF to `output_path`. Pages/words with no id or no glyphs are
+         * skipped; the original page graphics are untouched.
+         */
+    @Throws(EngineException::class) fun `ocrApplyTextLayer`(`inputPath`: kotlin.String, `pages`: List<OcrPage>, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_ocr_apply_text_layer(
+        FfiConverterString.lower(`inputPath`),FfiConverterSequenceTypeOcrPage.lower(`pages`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
     
 
         /**
