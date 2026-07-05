@@ -80,12 +80,15 @@ pub fn stamp_signature_image(
     let (x, y) = anchor(&position, page_w, page_h, stamp_w, stamp_h);
 
     doc.insert_image(page_id, img_stream, (x, y), (stamp_w, stamp_h))
-        .map_err(|e| EngineError::WriteFailed { reason: e.to_string() })?;
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
 
     doc.compress();
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -164,7 +167,12 @@ mod tests {
         assert_eq!(pages.len(), 1);
         let page_id = *pages.get(&1).unwrap();
         let (resources, _) = doc.get_page_resources(page_id).unwrap();
-        let xobjects = resources.unwrap().get(b"XObject").unwrap().as_dict().unwrap();
+        let xobjects = resources
+            .unwrap()
+            .get(b"XObject")
+            .unwrap()
+            .as_dict()
+            .unwrap();
         assert_eq!(xobjects.len(), 1);
     }
 

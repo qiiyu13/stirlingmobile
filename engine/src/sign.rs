@@ -53,7 +53,13 @@ pub fn certify_pdf(
             reason: format!("invalid DocMDP permission {permission}: must be 1, 2, or 3"),
         });
     }
-    sign_or_certify(input_path, pfx_path, pfx_password, Some(permission), output_path)
+    sign_or_certify(
+        input_path,
+        pfx_path,
+        pfx_password,
+        Some(permission),
+        output_path,
+    )
 }
 
 fn sign_or_certify(
@@ -72,9 +78,10 @@ fn sign_or_certify(
     add_signature_placeholder(&mut doc, certify_permission)?;
 
     let mut buffer = Vec::new();
-    doc.save_to(&mut Cursor::new(&mut buffer)).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save_to(&mut Cursor::new(&mut buffer))
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
 
     let byte_range_spans = locate_byte_range_placeholder(&buffer)?;
     let contents_span = locate_contents_placeholder(&buffer)?;
@@ -125,10 +132,16 @@ fn sign_or_certify(
 /// `/Perms` - and refuses if the PDF already has a signature field, since
 /// a certifying signature must be the document's first (ISO 32000-1
 /// §12.8.2.2).
-fn add_signature_placeholder(doc: &mut Document, certify_permission: Option<u8>) -> Result<(), EngineError> {
-    let page_id = *doc.get_pages().get(&1).ok_or_else(|| EngineError::WriteFailed {
-        reason: "PDF has no pages to sign".to_string(),
-    })?;
+fn add_signature_placeholder(
+    doc: &mut Document,
+    certify_permission: Option<u8>,
+) -> Result<(), EngineError> {
+    let page_id = *doc
+        .get_pages()
+        .get(&1)
+        .ok_or_else(|| EngineError::WriteFailed {
+            reason: "PDF has no pages to sign".to_string(),
+        })?;
 
     let catalog_id = doc
         .trailer
@@ -252,7 +265,10 @@ fn add_signature_placeholder(doc: &mut Document, certify_permission: Option<u8>)
 
     if certify_permission.is_some() {
         if let Ok(catalog_dict) = doc.get_dictionary_mut(catalog_id) {
-            catalog_dict.set("Perms", dictionary! { "DocMDP" => Object::Reference(sig_id) });
+            catalog_dict.set(
+                "Perms",
+                dictionary! { "DocMDP" => Object::Reference(sig_id) },
+            );
         }
     }
 
@@ -282,9 +298,18 @@ fn locate_byte_range_placeholder(buffer: &[u8]) -> Result<[ByteSpan; 3], EngineE
     })?;
     let w = BYTE_RANGE_DIGIT_WIDTH;
     Ok([
-        ByteSpan { start, end: start + w },
-        ByteSpan { start: start + w + 1, end: start + 2 * w + 1 },
-        ByteSpan { start: start + 2 * w + 2, end: start + 3 * w + 2 },
+        ByteSpan {
+            start,
+            end: start + w,
+        },
+        ByteSpan {
+            start: start + w + 1,
+            end: start + 2 * w + 1,
+        },
+        ByteSpan {
+            start: start + 2 * w + 2,
+            end: start + 3 * w + 2,
+        },
     ])
 }
 
@@ -311,7 +336,10 @@ fn patch_decimal(buffer: &mut [u8], span: &ByteSpan, value: i64) -> Result<(), E
     let text = format!("{value:>width$}", width = span.end - span.start);
     if text.len() != span.end - span.start {
         return Err(EngineError::WriteFailed {
-            reason: format!("PDF too large to fit in a {}-digit ByteRange field", span.end - span.start),
+            reason: format!(
+                "PDF too large to fit in a {}-digit ByteRange field",
+                span.end - span.start
+            ),
         });
     }
     buffer[span.start..span.end].copy_from_slice(text.as_bytes());
@@ -337,13 +365,15 @@ mod tests {
         let key_der = private_key.to_pkcs8_der().unwrap().as_bytes().to_vec();
 
         let pkcs8 = rustls_pki_types::PrivatePkcs8KeyDer::from(key_der.clone());
-        let key_pair = rcgen::KeyPair::from_pkcs8_der_and_sign_algo(&pkcs8, &rcgen::PKCS_RSA_SHA256).unwrap();
+        let key_pair =
+            rcgen::KeyPair::from_pkcs8_der_and_sign_algo(&pkcs8, &rcgen::PKCS_RSA_SHA256).unwrap();
         let params = rcgen::CertificateParams::new(Vec::<String>::new()).unwrap();
         let cert = params.self_signed(&key_pair).unwrap();
         let cert_der = cert.der().to_vec();
 
         let password = "testpass";
-        let pfx = p12::PFX::new(&cert_der, &key_der, None, password, "stirling-mobile-test").unwrap();
+        let pfx =
+            p12::PFX::new(&cert_der, &key_der, None, password, "stirling-mobile-test").unwrap();
         (pfx.to_der(), password)
     }
 
@@ -354,7 +384,12 @@ mod tests {
     /// `None` if `openssl` isn't installed, so this test skips gracefully
     /// rather than failing on machines without it.
     fn make_test_pfx_pbes2() -> Option<(Vec<u8>, &'static str)> {
-        if !Command::new("openssl").arg("version").status().map(|s| s.success()).unwrap_or(false) {
+        if !Command::new("openssl")
+            .arg("version")
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+        {
             return None;
         }
         let dir = temp_dir();
@@ -365,10 +400,19 @@ mod tests {
 
         let ok = Command::new("openssl")
             .args([
-                "req", "-x509", "-newkey", "rsa:2048",
-                "-keyout", key_pem.to_str()?,
-                "-out", cert_pem.to_str()?,
-                "-days", "365", "-nodes", "-subj", "/CN=PBES2 Test Signer",
+                "req",
+                "-x509",
+                "-newkey",
+                "rsa:2048",
+                "-keyout",
+                key_pem.to_str()?,
+                "-out",
+                cert_pem.to_str()?,
+                "-days",
+                "365",
+                "-nodes",
+                "-subj",
+                "/CN=PBES2 Test Signer",
             ])
             .status()
             .ok()?
@@ -378,11 +422,16 @@ mod tests {
         }
         let ok = Command::new("openssl")
             .args([
-                "pkcs12", "-export",
-                "-out", pfx_path.to_str()?,
-                "-inkey", key_pem.to_str()?,
-                "-in", cert_pem.to_str()?,
-                "-passout", &format!("pass:{password}"),
+                "pkcs12",
+                "-export",
+                "-out",
+                pfx_path.to_str()?,
+                "-inkey",
+                key_pem.to_str()?,
+                "-in",
+                cert_pem.to_str()?,
+                "-passout",
+                &format!("pass:{password}"),
             ])
             .status()
             .ok()?
@@ -426,7 +475,10 @@ mod tests {
     /// signing code, so a bug in our `/ByteRange`/CMS construction that
     /// "looks right" to us still gets caught.
     fn pdfsig_says_valid(path: &std::path::Path) -> bool {
-        let output = Command::new("pdfsig").arg(path).output().expect("pdfsig must be installed");
+        let output = Command::new("pdfsig")
+            .arg(path)
+            .output()
+            .expect("pdfsig must be installed");
         let stdout = String::from_utf8_lossy(&output.stdout);
         stdout.contains("Signature Validation: Signature is Valid")
     }
@@ -449,7 +501,10 @@ mod tests {
         )
         .unwrap();
 
-        assert!(pdfsig_says_valid(&output), "pdfsig did not report a valid signature");
+        assert!(
+            pdfsig_says_valid(&output),
+            "pdfsig did not report a valid signature"
+        );
     }
 
     #[test]
@@ -473,7 +528,10 @@ mod tests {
         )
         .unwrap();
 
-        assert!(pdfsig_says_valid(&output), "pdfsig did not report a valid signature for a PBES2/AES PFX");
+        assert!(
+            pdfsig_says_valid(&output),
+            "pdfsig did not report a valid signature for a PBES2/AES PFX"
+        );
     }
 
     #[test]
@@ -500,11 +558,17 @@ mod tests {
         // verification must now fail.
         let mut bytes = std::fs::read(&output).unwrap();
         let marker = b"endstream";
-        let pos = bytes.windows(marker.len()).position(|w| w == marker).unwrap();
+        let pos = bytes
+            .windows(marker.len())
+            .position(|w| w == marker)
+            .unwrap();
         bytes[pos - 1] ^= 0xFF;
         std::fs::write(&output, &bytes).unwrap();
 
-        assert!(!pdfsig_says_valid(&output), "tampering after signing should invalidate the signature");
+        assert!(
+            !pdfsig_says_valid(&output),
+            "tampering after signing should invalidate the signature"
+        );
     }
 
     #[test]
@@ -526,7 +590,10 @@ mod tests {
         )
         .unwrap();
 
-        assert!(pdfsig_says_valid(&output), "pdfsig did not report a valid certifying signature");
+        assert!(
+            pdfsig_says_valid(&output),
+            "pdfsig did not report a valid certifying signature"
+        );
 
         // pdfsig's plain output doesn't surface DocMDP/certification info at
         // all, so check the /Perms/DocMDP wiring structurally via qpdf - an
@@ -542,11 +609,24 @@ mod tests {
         // qpdf exits 3 for "succeeded with warnings" (e.g. our minimal test
         // fixture page has no /Resources dict, unrelated to signing) - only
         // exit 2 (error) is a real failure here.
-        assert_ne!(status.code(), Some(2), "qpdf failed to reparse the certified PDF");
+        assert_ne!(
+            status.code(),
+            Some(2),
+            "qpdf failed to reparse the certified PDF"
+        );
         let dumped = String::from_utf8_lossy(&std::fs::read(&qdf).unwrap()).into_owned();
-        assert!(dumped.contains("/DocMDP"), "catalog /Perms /DocMDP missing:\n{dumped}");
-        assert!(dumped.contains("/TransformMethod /DocMDP"), "Sig /Reference DocMDP transform missing:\n{dumped}");
-        assert!(dumped.contains("/P 1"), "TransformParams /P value missing:\n{dumped}");
+        assert!(
+            dumped.contains("/DocMDP"),
+            "catalog /Perms /DocMDP missing:\n{dumped}"
+        );
+        assert!(
+            dumped.contains("/TransformMethod /DocMDP"),
+            "Sig /Reference DocMDP transform missing:\n{dumped}"
+        );
+        assert!(
+            dumped.contains("/P 1"),
+            "TransformParams /P value missing:\n{dumped}"
+        );
     }
 
     #[test]
@@ -576,7 +656,10 @@ mod tests {
             1,
             twice.to_string_lossy().into_owned(),
         );
-        assert!(result.is_err(), "certifying an already-signed PDF should be rejected");
+        assert!(
+            result.is_err(),
+            "certifying an already-signed PDF should be rejected"
+        );
     }
 
     #[test]

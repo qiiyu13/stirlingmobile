@@ -21,11 +21,10 @@ pub fn tool_overlay(
         path: base_path.clone(),
         reason: e.to_string(),
     })?;
-    let mut overlay_doc =
-        Document::load(&overlay_path).map_err(|e| EngineError::ReadFailed {
-            path: overlay_path.clone(),
-            reason: e.to_string(),
-        })?;
+    let mut overlay_doc = Document::load(&overlay_path).map_err(|e| EngineError::ReadFailed {
+        path: overlay_path.clone(),
+        reason: e.to_string(),
+    })?;
 
     let mut base_pages: Vec<(u32, ObjectId)> = base_doc.get_pages().into_iter().collect();
     base_pages.sort_by_key(|(n, _)| *n);
@@ -88,9 +87,11 @@ pub fn tool_overlay(
     }
 
     base_doc.compress();
-    base_doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    base_doc
+        .save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 

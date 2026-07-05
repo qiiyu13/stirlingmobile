@@ -21,21 +21,24 @@ pub fn convert_pdf_to_images(
 ) -> Result<Vec<String>, EngineError> {
     let pdfium = bind_pdfium(&pdfium_lib_dir)?;
 
-    let document = pdfium
-        .load_pdf_from_file(&input_path, None)
-        .map_err(|e| EngineError::ReadFailed {
-            path: input_path.clone(),
-            reason: e.to_string(),
-        })?;
+    let document =
+        pdfium
+            .load_pdf_from_file(&input_path, None)
+            .map_err(|e| EngineError::ReadFailed {
+                path: input_path.clone(),
+                reason: e.to_string(),
+            })?;
 
     let mut output_paths = Vec::new();
     for (index, page) in document.pages().iter().enumerate() {
         let target_width = (page.width().value / 72.0 * dpi as f32).round().max(1.0) as i32;
         let config = PdfRenderConfig::new().set_target_width(target_width);
 
-        let bitmap = page.render_with_config(&config).map_err(|e| EngineError::WriteFailed {
-            reason: format!("failed to render page {}: {e}", index + 1),
-        })?;
+        let bitmap = page
+            .render_with_config(&config)
+            .map_err(|e| EngineError::WriteFailed {
+                reason: format!("failed to render page {}: {e}", index + 1),
+            })?;
 
         let output_path = Path::new(&output_dir)
             .join(format!("page_{}.png", index + 1))
@@ -54,11 +57,12 @@ pub fn convert_pdf_to_images(
 }
 
 pub(crate) fn bind_pdfium(pdfium_lib_dir: &str) -> Result<Pdfium, EngineError> {
-    let bindings = Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path(pdfium_lib_dir))
-        .map_err(|e| EngineError::ReadFailed {
-            path: pdfium_lib_dir.to_string(),
-            reason: format!("failed to load libpdfium.so: {e}"),
-        })?;
+    let bindings =
+        Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path(pdfium_lib_dir))
+            .map_err(|e| EngineError::ReadFailed {
+                path: pdfium_lib_dir.to_string(),
+                reason: format!("failed to load libpdfium.so: {e}"),
+            })?;
     Ok(Pdfium::new(bindings))
 }
 

@@ -44,9 +44,10 @@ fn load(input_path: &str) -> Result<Document, EngineError> {
 
 fn save(mut doc: Document, output_path: &str) -> Result<(), EngineError> {
     doc.compress();
-    doc.save(output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -117,10 +118,7 @@ pub fn ocr_apply_text_layer(
                     y_pt.into(),
                 ],
             ));
-            ops.push(Operation::new(
-                "Tj",
-                vec![Object::string_literal(text)],
-            ));
+            ops.push(Operation::new("Tj", vec![Object::string_literal(text)]));
         }
 
         ops.push(Operation::new("ET", vec![]));
@@ -202,7 +200,10 @@ mod tests {
 
         // Font registered.
         let (resources, _) = doc.get_page_resources(page_id).unwrap();
-        assert!(resources.unwrap().get(b"Font").is_ok(), "OCR font registered");
+        assert!(
+            resources.unwrap().get(b"Font").is_ok(),
+            "OCR font registered"
+        );
 
         // Recognized text present in the content stream.
         assert!(doc.extract_text(&[1]).unwrap().contains("HELLO"));

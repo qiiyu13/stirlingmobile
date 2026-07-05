@@ -36,8 +36,16 @@ pub fn describe_images(path: String) -> Result<Vec<String>, EngineError> {
             continue;
         }
 
-        let width = stream.dict.get(b"Width").and_then(Object::as_i64).unwrap_or(-1);
-        let height = stream.dict.get(b"Height").and_then(Object::as_i64).unwrap_or(-1);
+        let width = stream
+            .dict
+            .get(b"Width")
+            .and_then(Object::as_i64)
+            .unwrap_or(-1);
+        let height = stream
+            .dict
+            .get(b"Height")
+            .and_then(Object::as_i64)
+            .unwrap_or(-1);
         let bpc = stream
             .dict
             .get(b"BitsPerComponent")
@@ -66,7 +74,13 @@ pub fn describe_images(path: String) -> Result<Vec<String>, EngineError> {
 
         lines.push(format!(
             "{}x{} bpc={} colorspace={} filter={} predictor={} bytes={}",
-            width, height, bpc, color_space, filter_desc, has_predictor, stream.content.len()
+            width,
+            height,
+            bpc,
+            color_space,
+            filter_desc,
+            has_predictor,
+            stream.content.len()
         ));
     }
     Ok(lines)

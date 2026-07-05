@@ -11,9 +11,10 @@ fn load(input_path: &str) -> Result<Document, EngineError> {
 fn save(mut doc: Document, output_path: &str) -> Result<(), EngineError> {
     doc.prune_objects();
     doc.renumber_objects();
-    doc.save(output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -82,13 +83,14 @@ pub fn pages_reorder(
         page_ids.push(*id);
     }
     page_ids.sort_by_key(|id| {
-        pages.iter().find(|(_n, i)| *i == id).map(|(n, _)| *n).unwrap_or(0)
+        pages
+            .iter()
+            .find(|(_n, i)| *i == id)
+            .map(|(n, _)| *n)
+            .unwrap_or(0)
     });
 
-    let new_page_ids: Vec<ObjectId> = order
-        .iter()
-        .map(|p| page_ids[*p as usize - 1])
-        .collect();
+    let new_page_ids: Vec<ObjectId> = order.iter().map(|p| page_ids[*p as usize - 1]).collect();
 
     let mut kids = Vec::new();
     for pid in &new_page_ids {
@@ -166,8 +168,7 @@ pub fn pages_scale(
         if let Some(cid) = content_id {
             if let Ok(obj) = doc.get_object_mut(cid) {
                 if let Object::Stream(s) = obj {
-                    let scale_cm = format!("{scale_x:.3} 0 0 {scale_y:.3} 0 0 cm ")
-                        .into_bytes();
+                    let scale_cm = format!("{scale_x:.3} 0 0 {scale_y:.3} 0 0 cm ").into_bytes();
                     let mut new_content = scale_cm;
                     new_content.extend(s.content.clone());
                     s.content = new_content;
@@ -215,11 +216,7 @@ pub fn pages_crop(
 /// # ponytail: only supports n in {2, 4, 6, 9}; creates Form XObjects from
 /// page content — doesn't preserve annotations or form fields.
 #[uniffi::export]
-pub fn pages_n_up(
-    input_path: String,
-    n: u32,
-    output_path: String,
-) -> Result<(), EngineError> {
+pub fn pages_n_up(input_path: String, n: u32, output_path: String) -> Result<(), EngineError> {
     if ![2, 4, 6, 9].contains(&n) {
         return Err(EngineError::WriteFailed {
             reason: "n must be 2, 4, 6, or 9".to_string(),
@@ -236,7 +233,13 @@ pub fn pages_n_up(
         }
     }
 
-    let cols = if n == 2 { 2 } else if n <= 4 { 2 } else { 3 };
+    let cols = if n == 2 {
+        2
+    } else if n <= 4 {
+        2
+    } else {
+        3
+    };
     let rows = n / cols;
 
     let first_media = doc
@@ -277,12 +280,14 @@ pub fn pages_n_up(
                     .ok()
                     .and_then(|d| d.get(b"MediaBox").ok())
                     .and_then(|o| o.as_array().ok())
-                    .and_then(|a| Some((
-                        a.get(2).and_then(|o| o.as_float().ok()).unwrap_or(612.0)
-                            - a.get(0).and_then(|o| o.as_float().ok()).unwrap_or(0.0),
-                        a.get(3).and_then(|o| o.as_float().ok()).unwrap_or(792.0)
-                            - a.get(1).and_then(|o| o.as_float().ok()).unwrap_or(0.0),
-                    )))
+                    .and_then(|a| {
+                        Some((
+                            a.get(2).and_then(|o| o.as_float().ok()).unwrap_or(612.0)
+                                - a.get(0).and_then(|o| o.as_float().ok()).unwrap_or(0.0),
+                            a.get(3).and_then(|o| o.as_float().ok()).unwrap_or(792.0)
+                                - a.get(1).and_then(|o| o.as_float().ok()).unwrap_or(0.0),
+                        ))
+                    })
                     .unwrap_or((cell_w, cell_h));
 
                 let content_id = doc
@@ -316,10 +321,9 @@ pub fn pages_n_up(
                         xobj_dict.set("Matrix", m.clone());
                     }
                 }
-                out_doc.objects.insert(
-                    xobj_id,
-                    Object::Stream(Stream::new(xobj_dict, cp_bytes)),
-                );
+                out_doc
+                    .objects
+                    .insert(xobj_id, Object::Stream(Stream::new(xobj_dict, cp_bytes)));
 
                 let name = format!("P{}", idx);
                 xobj_refs.push((name.clone(), xobj_id));
@@ -333,7 +337,8 @@ pub fn pages_n_up(
                 let oy = (cell_h - page_h * s) / 2.0;
                 content_ops.push(format!(
                     "q {s:.3} 0 0 {s:.3} {:.3} {:.3} cm /{name} Do Q ",
-                    x + ox, y + oy
+                    x + ox,
+                    y + oy
                 ));
 
                 idx += 1;
@@ -351,12 +356,11 @@ pub fn pages_n_up(
         }
         resources_dict.set(b"XObject".to_vec(), xobjs_dict);
 
-        let content_bytes: Vec<u8> =
-            content_ops.iter().flat_map(|s| s.as_bytes().to_vec()).collect();
-        let content_id = out_doc.add_object(Stream::new(
-            dictionary! {},
-            content_bytes,
-        ));
+        let content_bytes: Vec<u8> = content_ops
+            .iter()
+            .flat_map(|s| s.as_bytes().to_vec())
+            .collect();
+        let content_id = out_doc.add_object(Stream::new(dictionary! {}, content_bytes));
 
         out_doc.objects.insert(
             out_page_id,
@@ -506,7 +510,13 @@ mod tests {
         .unwrap();
         let doc = Document::load(&output).unwrap();
         let page_id = *doc.get_pages().get(&1).unwrap();
-        let media = doc.get_dictionary(page_id).unwrap().get(b"MediaBox").unwrap().as_array().unwrap();
+        let media = doc
+            .get_dictionary(page_id)
+            .unwrap()
+            .get(b"MediaBox")
+            .unwrap()
+            .as_array()
+            .unwrap();
         let w = media[2].as_float().unwrap();
         assert!((w - 306.0).abs() < 1.0, "scaled width should be ~306");
     }
@@ -572,4 +582,3 @@ mod tests {
         assert_eq!(doc_page_count(&output), 1);
     }
 }
-

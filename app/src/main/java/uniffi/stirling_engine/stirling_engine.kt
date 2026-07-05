@@ -791,6 +791,24 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -816,7 +834,13 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_stirling_engine_fn_func_compress_pdf_to_target_size(`inputPath`: RustBuffer.ByValue,`targetBytes`: Long,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    fun uniffi_stirling_engine_fn_func_content_add_annotation(`inputPath`: RustBuffer.ByValue,`pageNumber`: Int,`kind`: RustBuffer.ByValue,`x0`: Float,`y0`: Float,`x1`: Float,`y1`: Float,`noteText`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_content_add_text(`inputPath`: RustBuffer.ByValue,`pageNumber`: Int,`text`: RustBuffer.ByValue,`x`: Float,`y`: Float,`fontSize`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_content_auto_redact(`inputPath`: RustBuffer.ByValue,`pdfiumLibDir`: RustBuffer.ByValue,`patterns`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_content_draw(`inputPath`: RustBuffer.ByValue,`pageNumber`: Int,`strokes`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_content_page_numbers(`inputPath`: RustBuffer.ByValue,`position`: RustBuffer.ByValue,`format`: RustBuffer.ByValue,`startNumber`: Int,`fontSize`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -830,11 +854,17 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_stirling_engine_fn_func_convert_markdown_to_html(`markdown`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_stirling_engine_fn_func_convert_pdf_to_html(`inputPath`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_convert_pdf_to_images(`inputPath`: RustBuffer.ByValue,`pdfiumLibDir`: RustBuffer.ByValue,`dpi`: Int,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_convert_pdf_to_pdfa(`inputPath`: RustBuffer.ByValue,`standard`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_convert_pdf_to_xml(`inputPath`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_describe_images(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_stirling_engine_fn_func_extract_images(`inputPath`: RustBuffer.ByValue,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_extract_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -860,12 +890,18 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_stirling_engine_fn_func_pages_crop(`inputPath`: RustBuffer.ByValue,`x1`: Float,`y1`: Float,`x2`: Float,`y2`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_pages_detect_duplicates(`inputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_pages_n_up(`inputPath`: RustBuffer.ByValue,`n`: Int,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_pages_remove_duplicates(`inputPath`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_pages_reorder(`inputPath`: RustBuffer.ByValue,`order`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_pages_scale(`inputPath`: RustBuffer.ByValue,`scaleX`: Float,`scaleY`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_pdf_page_size(`inputPath`: RustBuffer.ByValue,`pageNumber`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_pdfa_validate(`inputPath`: RustBuffer.ByValue,`standard`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_remove_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1008,7 +1044,13 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_compress_pdf_to_target_size(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_content_add_annotation(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_content_add_text(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_content_auto_redact(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_content_draw(
     ): Short
     fun uniffi_stirling_engine_checksum_func_content_page_numbers(
     ): Short
@@ -1022,11 +1064,17 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_convert_markdown_to_html(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_convert_pdf_to_html(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_convert_pdf_to_images(
     ): Short
     fun uniffi_stirling_engine_checksum_func_convert_pdf_to_pdfa(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_convert_pdf_to_xml(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_describe_images(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_extract_images(
     ): Short
     fun uniffi_stirling_engine_checksum_func_extract_pages(
     ): Short
@@ -1052,11 +1100,17 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_pages_crop(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_pages_detect_duplicates(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_pages_n_up(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_pages_remove_duplicates(
     ): Short
     fun uniffi_stirling_engine_checksum_func_pages_reorder(
     ): Short
     fun uniffi_stirling_engine_checksum_func_pages_scale(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_pdf_page_size(
     ): Short
     fun uniffi_stirling_engine_checksum_func_pdfa_validate(
     ): Short
@@ -1110,7 +1164,16 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_stirling_engine_checksum_func_compress_pdf_to_target_size() != 17494.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_stirling_engine_checksum_func_content_add_annotation() != 60590.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_content_add_text() != 3450.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_content_auto_redact() != 63557.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_content_draw() != 11295.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_content_page_numbers() != 18195.toShort()) {
@@ -1131,13 +1194,22 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_stirling_engine_checksum_func_convert_markdown_to_html() != 5885.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_stirling_engine_checksum_func_convert_pdf_to_html() != 54692.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_convert_pdf_to_images() != 33306.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_convert_pdf_to_pdfa() != 4211.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_stirling_engine_checksum_func_convert_pdf_to_xml() != 16935.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_describe_images() != 21719.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_extract_images() != 7547.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_extract_pages() != 39682.toShort()) {
@@ -1176,13 +1248,22 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_stirling_engine_checksum_func_pages_crop() != 38033.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_stirling_engine_checksum_func_pages_detect_duplicates() != 9916.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_pages_n_up() != 32770.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_pages_remove_duplicates() != 23902.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_pages_reorder() != 7768.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_pages_scale() != 65242.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_pdf_page_size() != 22954.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_pdfa_validate() != 26016.toShort()) {
@@ -1660,6 +1741,41 @@ public object FfiConverterTypePageComparison: FfiConverterRustBuffer<PageCompari
 
 
 /**
+ * A page's `/MediaBox` size in points (width, height).
+ */
+data class PageSize (
+    var `width`: kotlin.Float, 
+    var `height`: kotlin.Float
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypePageSize: FfiConverterRustBuffer<PageSize> {
+    override fun read(buf: ByteBuffer): PageSize {
+        return PageSize(
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: PageSize) = (
+            FfiConverterFloat.allocationSize(value.`width`) +
+            FfiConverterFloat.allocationSize(value.`height`)
+    )
+
+    override fun write(value: PageSize, buf: ByteBuffer) {
+            FfiConverterFloat.write(value.`width`, buf)
+            FfiConverterFloat.write(value.`height`, buf)
+    }
+}
+
+
+
+/**
  * The document `/Info` fields. A field is `None` when the PDF doesn't set it.
  */
 data class PdfMetadata (
@@ -1796,6 +1912,58 @@ public object FfiConverterTypeRedactionArea: FfiConverterRustBuffer<RedactionAre
             FfiConverterFloat.write(value.`y`, buf)
             FfiConverterFloat.write(value.`width`, buf)
             FfiConverterFloat.write(value.`height`, buf)
+    }
+}
+
+
+
+/**
+ * One freehand stroke: a polyline of points (points, origin bottom-left),
+ * an RGB color (0.0..=1.0 each), and a line width in points.
+ */
+data class Stroke (
+    var `pointsX`: List<kotlin.Float>, 
+    var `pointsY`: List<kotlin.Float>, 
+    var `colorR`: kotlin.Float, 
+    var `colorG`: kotlin.Float, 
+    var `colorB`: kotlin.Float, 
+    var `width`: kotlin.Float
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeStroke: FfiConverterRustBuffer<Stroke> {
+    override fun read(buf: ByteBuffer): Stroke {
+        return Stroke(
+            FfiConverterSequenceFloat.read(buf),
+            FfiConverterSequenceFloat.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: Stroke) = (
+            FfiConverterSequenceFloat.allocationSize(value.`pointsX`) +
+            FfiConverterSequenceFloat.allocationSize(value.`pointsY`) +
+            FfiConverterFloat.allocationSize(value.`colorR`) +
+            FfiConverterFloat.allocationSize(value.`colorG`) +
+            FfiConverterFloat.allocationSize(value.`colorB`) +
+            FfiConverterFloat.allocationSize(value.`width`)
+    )
+
+    override fun write(value: Stroke, buf: ByteBuffer) {
+            FfiConverterSequenceFloat.write(value.`pointsX`, buf)
+            FfiConverterSequenceFloat.write(value.`pointsY`, buf)
+            FfiConverterFloat.write(value.`colorR`, buf)
+            FfiConverterFloat.write(value.`colorG`, buf)
+            FfiConverterFloat.write(value.`colorB`, buf)
+            FfiConverterFloat.write(value.`width`, buf)
     }
 }
 
@@ -1970,6 +2138,34 @@ public object FfiConverterSequenceUInt: FfiConverterRustBuffer<List<kotlin.UInt>
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterUInt.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceFloat: FfiConverterRustBuffer<List<kotlin.Float>> {
+    override fun read(buf: ByteBuffer): List<kotlin.Float> {
+        val len = buf.getInt()
+        return List<kotlin.Float>(len) {
+            FfiConverterFloat.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<kotlin.Float>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterFloat.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<kotlin.Float>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterFloat.write(it, buf)
         }
     }
 }
@@ -2169,6 +2365,34 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
         }
     }
 }
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeStroke: FfiConverterRustBuffer<List<Stroke>> {
+    override fun read(buf: ByteBuffer): List<Stroke> {
+        val len = buf.getInt()
+        return List<Stroke>(len) {
+            FfiConverterTypeStroke.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<Stroke>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeStroke.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<Stroke>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeStroke.write(it, buf)
+        }
+    }
+}
         /**
          * Adds standard-security-handler AES-128 password protection to the PDF at
          * `input_path`. If `owner_password` is empty, it defaults to
@@ -2248,6 +2472,36 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     
 
         /**
+         * Adds a markup annotation to 1-indexed `page_number` of the PDF at
+         * `input_path`: `kind` is one of `highlight`/`underline`/`strikeout`/`note`,
+         * anchored to the rectangle `(x0, y0, x1, y1)` (points, origin bottom-left).
+         * `note_text` is the popup body for `note` annotations (ignored otherwise).
+         * Writes the result to `output_path`.
+         */
+    @Throws(EngineException::class) fun `contentAddAnnotation`(`inputPath`: kotlin.String, `pageNumber`: kotlin.UInt, `kind`: kotlin.String, `x0`: kotlin.Float, `y0`: kotlin.Float, `x1`: kotlin.Float, `y1`: kotlin.Float, `noteText`: kotlin.String?, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_add_annotation(
+        FfiConverterString.lower(`inputPath`),FfiConverterUInt.lower(`pageNumber`),FfiConverterString.lower(`kind`),FfiConverterFloat.lower(`x0`),FfiConverterFloat.lower(`y0`),FfiConverterFloat.lower(`x1`),FfiConverterFloat.lower(`y1`),FfiConverterOptionalString.lower(`noteText`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Draws `text` at `(x, y)` (points, origin bottom-left) on 1-indexed
+         * `page_number` of the PDF at `input_path`, at `font_size`, and writes the
+         * result to `output_path`.
+         */
+    @Throws(EngineException::class) fun `contentAddText`(`inputPath`: kotlin.String, `pageNumber`: kotlin.UInt, `text`: kotlin.String, `x`: kotlin.Float, `y`: kotlin.Float, `fontSize`: kotlin.Float, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_add_text(
+        FfiConverterString.lower(`inputPath`),FfiConverterUInt.lower(`pageNumber`),FfiConverterString.lower(`text`),FfiConverterFloat.lower(`x`),FfiConverterFloat.lower(`y`),FfiConverterFloat.lower(`fontSize`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
          * Finds text matching any of `patterns` and redacts it (see
          * [`crate::redact::content_redact`] for what "redact" means here - true
          * removal from the content stream, not just an overlay).
@@ -2265,6 +2519,20 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_auto_redact(
         FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`pdfiumLibDir`),FfiConverterSequenceString.lower(`patterns`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Draws `strokes` onto 1-indexed `page_number` of the PDF at `input_path`
+         * and writes the result to `output_path`. Each stroke's `points_x`/`points_y`
+         * must have equal, non-empty length.
+         */
+    @Throws(EngineException::class) fun `contentDraw`(`inputPath`: kotlin.String, `pageNumber`: kotlin.UInt, `strokes`: List<Stroke>, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_content_draw(
+        FfiConverterString.lower(`inputPath`),FfiConverterUInt.lower(`pageNumber`),FfiConverterSequenceTypeStroke.lower(`strokes`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     
@@ -2360,6 +2628,21 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     
 
         /**
+         * Converts the PDF at `input_path` to a single HTML file (one `<section>`
+         * per page holding its extracted text) written to `output_path`. Not a
+         * fidelity-preserving conversion - layout/formatting/images are dropped,
+         * only text content is kept.
+         */
+    @Throws(EngineException::class) fun `convertPdfToHtml`(`inputPath`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_convert_pdf_to_html(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
          * Rasterizes every page of the PDF at `input_path` to a PNG at `dpi` and
          * writes them into `output_dir` as `page_1.png`, `page_2.png`, ... in
          * document order. Returns the written paths.
@@ -2399,6 +2682,21 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     
 
         /**
+         * Converts the PDF at `input_path` to a simple XML document (one `<page>`
+         * element per page, holding its extracted text) written to `output_path`.
+         * Not a fidelity-preserving conversion - layout/formatting/images are
+         * dropped, only text content is kept.
+         */
+    @Throws(EngineException::class) fun `convertPdfToXml`(`inputPath`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_convert_pdf_to_xml(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
          * Diagnostic: one summary line per image XObject in the PDF (filter,
          * color space, bit depth, dimensions, stored byte size). Used to explain
          * why `compress_pdf_by_level` did or didn't shrink a given file.
@@ -2408,6 +2706,21 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_describe_images(
         FfiConverterString.lower(`path`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Extracts every embedded image from the PDF at `input_path` into
+         * `output_dir` (must already exist), returning the written file paths in
+         * document order.
+         */
+    @Throws(EngineException::class) fun `extractImages`(`inputPath`: kotlin.String, `outputDir`: kotlin.String): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_extract_images(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`outputDir`),_status)
 }
     )
     }
@@ -2574,6 +2887,21 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     
 
         /**
+         * Returns the 1-indexed page numbers that are exact duplicates of an
+         * earlier page in the PDF at `input_path` (first occurrence of each page
+         * is kept out of this list).
+         */
+    @Throws(EngineException::class) fun `pagesDetectDuplicates`(`inputPath`: kotlin.String): List<kotlin.UInt> {
+            return FfiConverterSequenceUInt.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_pages_detect_duplicates(
+        FfiConverterString.lower(`inputPath`),_status)
+}
+    )
+    }
+    
+
+        /**
          * Arrange `n` pages per sheet (2, 4, 6, or 9-up). Original pages are scaled
          * down and positioned in a grid on new output pages. The output sheet keeps
          * the original page size of the first page.
@@ -2585,6 +2913,19 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_pages_n_up(
         FfiConverterString.lower(`inputPath`),FfiConverterUInt.lower(`n`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Removes exact duplicate pages (keeping the first occurrence of each) from
+         * the PDF at `input_path` and writes the result to `output_path`.
+         */
+    @Throws(EngineException::class) fun `pagesRemoveDuplicates`(`inputPath`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_pages_remove_duplicates(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     
@@ -2614,6 +2955,22 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
         FfiConverterString.lower(`inputPath`),FfiConverterFloat.lower(`scaleX`),FfiConverterFloat.lower(`scaleY`),FfiConverterString.lower(`outputPath`),_status)
 }
     
+    
+
+        /**
+         * Returns the size (in points) of 1-indexed `page_number` of the PDF at
+         * `input_path`. Callers that let a user draw/place content on a rendered
+         * preview of the page need this to convert on-screen pixel coordinates into
+         * PDF point coordinates - the two are not the same scale.
+         */
+    @Throws(EngineException::class) fun `pdfPageSize`(`inputPath`: kotlin.String, `pageNumber`: kotlin.UInt): PageSize {
+            return FfiConverterTypePageSize.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_pdf_page_size(
+        FfiConverterString.lower(`inputPath`),FfiConverterUInt.lower(`pageNumber`),_status)
+}
+    )
+    }
     
 
         /**

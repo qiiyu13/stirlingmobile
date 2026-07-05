@@ -72,7 +72,12 @@ pub fn metadata_edit(
     })?;
 
     // Ensure there is an /Info dictionary to write into.
-    let info_id = match doc.trailer.get(b"Info").ok().and_then(|o| o.as_reference().ok()) {
+    let info_id = match doc
+        .trailer
+        .get(b"Info")
+        .ok()
+        .and_then(|o| o.as_reference().ok())
+    {
         Some(id) => id,
         None => {
             let id = doc.add_object(Dictionary::new());
@@ -100,9 +105,10 @@ pub fn metadata_edit(
         }
     }
 
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -193,7 +199,7 @@ mod tests {
         metadata_edit(
             input.to_string_lossy().into_owned(),
             Some("New Title".into()),
-            None, // leave Author unchanged
+            None,                   // leave Author unchanged
             Some("Café ☕".into()), // non-ASCII -> UTF-16BE
             None,
             None,
@@ -205,7 +211,11 @@ mod tests {
         let md = metadata_extract(output.to_string_lossy().into_owned()).unwrap();
         assert_eq!(md.title.as_deref(), Some("New Title"));
         assert_eq!(md.author.as_deref(), Some("Alice"), "untouched field kept");
-        assert_eq!(md.subject.as_deref(), Some("Café ☕"), "non-ASCII round-trips");
+        assert_eq!(
+            md.subject.as_deref(),
+            Some("Café ☕"),
+            "non-ASCII round-trips"
+        );
     }
 
     #[test]
@@ -218,7 +228,11 @@ mod tests {
         metadata_edit(
             input.to_string_lossy().into_owned(),
             Some("Made Title".into()),
-            None, None, None, None, None,
+            None,
+            None,
+            None,
+            None,
+            None,
             output.to_string_lossy().into_owned(),
         )
         .unwrap();

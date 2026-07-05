@@ -16,9 +16,7 @@ pub fn convert_markdown_to_html(markdown: String) -> String {
     let mut body = String::new();
     html::push_html(&mut body, parser);
 
-    format!(
-        "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body>{body}</body></html>"
-    )
+    format!("<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body>{body}</body></html>")
 }
 
 #[cfg(test)]

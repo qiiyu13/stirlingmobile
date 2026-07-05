@@ -78,9 +78,10 @@ pub fn security_sanitize(
         strip_link_annotations(&mut doc);
     }
 
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -185,7 +186,10 @@ mod tests {
         let names_id = catalog.get(b"Names").unwrap().as_reference().unwrap();
         let names = doc.get_dictionary(names_id).unwrap();
         assert!(names.get(b"JavaScript").is_err(), "JS name tree removed");
-        assert!(names.get(b"EmbeddedFiles").is_err(), "embedded files removed");
+        assert!(
+            names.get(b"EmbeddedFiles").is_err(),
+            "embedded files removed"
+        );
 
         let page_id = *doc.get_pages().get(&1).unwrap();
         let annots = doc

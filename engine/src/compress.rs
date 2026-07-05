@@ -40,9 +40,10 @@ pub fn compress_pdf_custom(
     recompress_images(&mut doc, quality, scale);
     doc.compress();
 
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -111,12 +112,15 @@ fn recompress_images(doc: &mut Document, quality: u8, scale: f32) {
         let mut encoded = Vec::new();
         let mut cursor = Cursor::new(&mut encoded);
         let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, quality);
-        if encoder.write_image(
-            resized.to_rgb8().as_raw(),
-            resized.width(),
-            resized.height(),
-            image::ExtendedColorType::Rgb8,
-        ).is_err() {
+        if encoder
+            .write_image(
+                resized.to_rgb8().as_raw(),
+                resized.width(),
+                resized.height(),
+                image::ExtendedColorType::Rgb8,
+            )
+            .is_err()
+        {
             continue;
         }
 
@@ -126,9 +130,13 @@ fn recompress_images(doc: &mut Document, quality: u8, scale: f32) {
             };
             stream.dict.set("Width", resized.width() as i64);
             stream.dict.set("Height", resized.height() as i64);
-            stream.dict.set("ColorSpace", Object::Name(b"DeviceRGB".to_vec()));
+            stream
+                .dict
+                .set("ColorSpace", Object::Name(b"DeviceRGB".to_vec()));
             stream.dict.set("BitsPerComponent", 8);
-            stream.dict.set("Filter", Object::Name(b"DCTDecode".to_vec()));
+            stream
+                .dict
+                .set("Filter", Object::Name(b"DCTDecode".to_vec()));
             stream.dict.remove(b"DecodeParms");
             stream.set_content(encoded);
         }
@@ -320,7 +328,9 @@ mod tests {
         });
         let content_id = doc.add_object(lopdf::Stream::new(
             dictionary! {},
-            lopdf::content::Content { operations: vec![] }.encode().unwrap(),
+            lopdf::content::Content { operations: vec![] }
+                .encode()
+                .unwrap(),
         ));
         let pages_id = doc.new_object_id();
         let page_id = doc.add_object(dictionary! {
@@ -348,7 +358,11 @@ mod tests {
         let recompressed = doc.get_object(image_id).unwrap().as_stream().unwrap();
         assert!(recompressed.content.len() < original_len);
         assert_eq!(
-            recompressed.dict.get(b"Filter").and_then(Object::as_name).unwrap(),
+            recompressed
+                .dict
+                .get(b"Filter")
+                .and_then(Object::as_name)
+                .unwrap(),
             b"DCTDecode"
         );
     }

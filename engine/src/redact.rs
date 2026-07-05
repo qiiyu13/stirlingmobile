@@ -36,13 +36,26 @@ impl FontWidths {
     /// starting at `bytes[pos]`.
     fn glyph_at(&self, bytes: &[u8], pos: usize, fallback: f64) -> (f64, usize) {
         match self {
-            FontWidths::Simple { first_char, widths, missing_width } => {
+            FontWidths::Simple {
+                first_char,
+                widths,
+                missing_width,
+            } => {
                 let idx = bytes[pos] as i64 - first_char;
-                let width = (idx >= 0).then(|| widths.get(idx as usize).copied()).flatten();
-                let width = width.unwrap_or(if *missing_width > 0.0 { *missing_width } else { fallback });
+                let width = (idx >= 0)
+                    .then(|| widths.get(idx as usize).copied())
+                    .flatten();
+                let width = width.unwrap_or(if *missing_width > 0.0 {
+                    *missing_width
+                } else {
+                    fallback
+                });
                 (width, 1)
             }
-            FontWidths::Cid { default_width, widths } => {
+            FontWidths::Cid {
+                default_width,
+                widths,
+            } => {
                 if pos + 1 < bytes.len() {
                     let cid = ((bytes[pos] as u32) << 8) | bytes[pos + 1] as u32;
                     (widths.get(&cid).copied().unwrap_or(*default_width), 2)
@@ -67,18 +80,39 @@ fn resolve_dict<'a>(doc: &'a Document, obj: &'a Object) -> Option<&'a lopdf::Dic
 
 fn font_widths_from_dict(doc: &Document, font_obj: &Object) -> Option<FontWidths> {
     let font_dict = resolve_dict(doc, font_obj)?;
-    if font_dict.get(b"Subtype").ok().and_then(|o| o.as_name().ok()) == Some(b"Type0") {
+    if font_dict
+        .get(b"Subtype")
+        .ok()
+        .and_then(|o| o.as_name().ok())
+        == Some(b"Type0")
+    {
         return Some(cid_font_widths_from_dict(doc, font_dict));
     }
     simple_font_widths_from_dict(doc, font_dict)
 }
 
-fn simple_font_widths_from_dict(doc: &Document, font_dict: &lopdf::Dictionary) -> Option<FontWidths> {
-    let first_char = font_dict.get(b"FirstChar").ok().and_then(|o| o.as_i64().ok())?;
-    let widths_arr = font_dict.get(b"Widths").ok().and_then(|o| resolve(doc, o))?.as_array().ok()?;
+fn simple_font_widths_from_dict(
+    doc: &Document,
+    font_dict: &lopdf::Dictionary,
+) -> Option<FontWidths> {
+    let first_char = font_dict
+        .get(b"FirstChar")
+        .ok()
+        .and_then(|o| o.as_i64().ok())?;
+    let widths_arr = font_dict
+        .get(b"Widths")
+        .ok()
+        .and_then(|o| resolve(doc, o))?
+        .as_array()
+        .ok()?;
     let widths = widths_arr
         .iter()
-        .map(|w| resolve(doc, w).and_then(|o| o.as_float().ok()).unwrap_or(0.0) as f64 / 1000.0)
+        .map(|w| {
+            resolve(doc, w)
+                .and_then(|o| o.as_float().ok())
+                .unwrap_or(0.0) as f64
+                / 1000.0
+        })
         .collect();
     let missing_width = font_dict
         .get(b"FontDescriptor")
@@ -88,7 +122,11 @@ fn simple_font_widths_from_dict(doc: &Document, font_dict: &lopdf::Dictionary) -
         .and_then(|o| o.as_float().ok())
         .map(|w| w as f64 / 1000.0)
         .unwrap_or(0.0);
-    Some(FontWidths::Simple { first_char, widths, missing_width })
+    Some(FontWidths::Simple {
+        first_char,
+        widths,
+        missing_width,
+    })
 }
 
 /// Parses `/DescendantFonts[0]`'s `/DW` and `/W` (CID width array, whose
@@ -113,22 +151,40 @@ fn cid_font_widths_from_dict(doc: &Document, font_dict: &lopdf::Dictionary) -> F
         if let Some(dw) = desc_dict.get(b"DW").ok().and_then(|o| o.as_float().ok()) {
             default_width = dw as f64 / 1000.0;
         }
-        if let Some(w_arr) = desc_dict.get(b"W").ok().and_then(|o| resolve(doc, o)).and_then(|o| o.as_array().ok()) {
+        if let Some(w_arr) = desc_dict
+            .get(b"W")
+            .ok()
+            .and_then(|o| resolve(doc, o))
+            .and_then(|o| o.as_array().ok())
+        {
             let mut i = 0;
             while i + 1 < w_arr.len() {
-                let Some(start_cid) = resolve(doc, &w_arr[i]).and_then(|o| o.as_i64().ok()) else { break };
+                let Some(start_cid) = resolve(doc, &w_arr[i]).and_then(|o| o.as_i64().ok()) else {
+                    break;
+                };
                 match resolve(doc, &w_arr[i + 1]) {
                     Some(Object::Array(list)) => {
                         for (offset, w) in list.iter().enumerate() {
                             if let Some(width) = resolve(doc, w).and_then(|o| o.as_float().ok()) {
-                                widths.insert((start_cid + offset as i64) as u32, width as f64 / 1000.0);
+                                widths.insert(
+                                    (start_cid + offset as i64) as u32,
+                                    width as f64 / 1000.0,
+                                );
                             }
                         }
                         i += 2;
                     }
                     Some(_) if i + 2 < w_arr.len() => {
-                        let Some(end_cid) = resolve(doc, &w_arr[i + 1]).and_then(|o| o.as_i64().ok()) else { break };
-                        let Some(width) = resolve(doc, &w_arr[i + 2]).and_then(|o| o.as_float().ok()) else { break };
+                        let Some(end_cid) =
+                            resolve(doc, &w_arr[i + 1]).and_then(|o| o.as_i64().ok())
+                        else {
+                            break;
+                        };
+                        let Some(width) =
+                            resolve(doc, &w_arr[i + 2]).and_then(|o| o.as_float().ok())
+                        else {
+                            break;
+                        };
                         for cid in start_cid..=end_cid {
                             widths.insert(cid as u32, width as f64 / 1000.0);
                         }
@@ -140,7 +196,10 @@ fn cid_font_widths_from_dict(doc: &Document, font_dict: &lopdf::Dictionary) -> F
         }
     }
 
-    FontWidths::Cid { default_width, widths }
+    FontWidths::Cid {
+        default_width,
+        widths,
+    }
 }
 
 /// Maps font resource name (e.g. `F1`, as used in `/F1 24 Tf`) to that
@@ -158,10 +217,18 @@ fn load_font_widths(doc: &Document, page_id: lopdf::ObjectId) -> HashMap<Vec<u8>
     let Ok(page) = doc.get_dictionary(page_id) else {
         return map;
     };
-    let Some(resources) = page.get(b"Resources").ok().and_then(|o| resolve_dict(doc, o)) else {
+    let Some(resources) = page
+        .get(b"Resources")
+        .ok()
+        .and_then(|o| resolve_dict(doc, o))
+    else {
         return map;
     };
-    let Some(fonts) = resources.get(b"Font").ok().and_then(|o| resolve_dict(doc, o)) else {
+    let Some(fonts) = resources
+        .get(b"Font")
+        .ok()
+        .and_then(|o| resolve_dict(doc, o))
+    else {
         return map;
     };
     for (name, font_obj) in fonts.iter() {
@@ -209,19 +276,25 @@ pub(crate) fn load(input_path: &str) -> Result<Document, EngineError> {
 pub(crate) fn save(mut doc: Document, output_path: &str) -> Result<(), EngineError> {
     doc.prune_objects();
     doc.renumber_objects();
-    doc.save(output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
-pub(crate) fn apply_redactions(doc: &mut Document, redactions: &[RedactionArea]) -> Result<(), EngineError> {
+pub(crate) fn apply_redactions(
+    doc: &mut Document,
+    redactions: &[RedactionArea],
+) -> Result<(), EngineError> {
     let mut by_page: HashMap<u32, Vec<(f64, f64, f64, f64)>> = HashMap::new();
     for r in redactions {
-        by_page
-            .entry(r.page)
-            .or_default()
-            .push((r.x as f64, r.y as f64, r.width as f64, r.height as f64));
+        by_page.entry(r.page).or_default().push((
+            r.x as f64,
+            r.y as f64,
+            r.width as f64,
+            r.height as f64,
+        ));
     }
     if by_page.is_empty() {
         return Ok(());
@@ -231,7 +304,10 @@ pub(crate) fn apply_redactions(doc: &mut Document, redactions: &[RedactionArea])
     for (page_num, boxes) in &by_page {
         let Some(&page_id) = pages.get(page_num) else {
             return Err(EngineError::WriteFailed {
-                reason: format!("redaction references page {page_num}, but the document has {} pages", pages.len()),
+                reason: format!(
+                    "redaction references page {page_num}, but the document has {} pages",
+                    pages.len()
+                ),
             });
         };
         redact_page(doc, page_id, boxes)?;
@@ -239,11 +315,17 @@ pub(crate) fn apply_redactions(doc: &mut Document, redactions: &[RedactionArea])
     Ok(())
 }
 
-fn redact_page(doc: &mut Document, page_id: lopdf::ObjectId, boxes: &[(f64, f64, f64, f64)]) -> Result<(), EngineError> {
-    let raw = doc.get_page_content(page_id).map_err(|e| EngineError::ReadFailed {
-        path: String::new(),
-        reason: format!("failed to read page content: {e}"),
-    })?;
+fn redact_page(
+    doc: &mut Document,
+    page_id: lopdf::ObjectId,
+    boxes: &[(f64, f64, f64, f64)],
+) -> Result<(), EngineError> {
+    let raw = doc
+        .get_page_content(page_id)
+        .map_err(|e| EngineError::ReadFailed {
+            path: String::new(),
+            reason: format!("failed to read page content: {e}"),
+        })?;
     let content = Content::decode(&raw).map_err(|e| EngineError::ReadFailed {
         path: String::new(),
         reason: format!("failed to decode page content stream: {e}"),
@@ -252,15 +334,23 @@ fn redact_page(doc: &mut Document, page_id: lopdf::ObjectId, boxes: &[(f64, f64,
     let font_widths = load_font_widths(doc, page_id);
     let kept_ops = strip_text_in_boxes(content.operations, boxes, &font_widths);
 
-    let mut new_content = Content { operations: kept_ops };
+    let mut new_content = Content {
+        operations: kept_ops,
+    };
     for &(x, y, w, h) in boxes {
         new_content.operations.push(Operation::new("q", vec![]));
-        new_content
-            .operations
-            .push(Operation::new("rg", vec![0.0.into(), 0.0.into(), 0.0.into()]));
+        new_content.operations.push(Operation::new(
+            "rg",
+            vec![0.0.into(), 0.0.into(), 0.0.into()],
+        ));
         new_content.operations.push(Operation::new(
             "re",
-            vec![(x as f32).into(), (y as f32).into(), (w as f32).into(), (h as f32).into()],
+            vec![
+                (x as f32).into(),
+                (y as f32).into(),
+                (w as f32).into(),
+                (h as f32).into(),
+            ],
         ));
         new_content.operations.push(Operation::new("f", vec![]));
         new_content.operations.push(Operation::new("Q", vec![]));
@@ -286,7 +376,11 @@ fn redact_page(doc: &mut Document, page_id: lopdf::ObjectId, boxes: &[(f64, f64,
 /// `T*`) and, per character, the font's real `/Widths` advance width when
 /// available (see [`FontWidths`]) - falling back to an average-glyph-width
 /// estimate only for fonts with no `/Widths` array.
-fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)], font_widths: &HashMap<Vec<u8>, FontWidths>) -> Vec<Operation> {
+fn strip_text_in_boxes(
+    operations: Vec<Operation>,
+    boxes: &[(f64, f64, f64, f64)],
+    font_widths: &HashMap<Vec<u8>, FontWidths>,
+) -> Vec<Operation> {
     const AVG_GLYPH_WIDTH_EM: f64 = 0.65;
 
     let mut ctm_stack: Vec<Matrix> = Vec::new();
@@ -328,7 +422,11 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
                 if let Some(size) = op.operands.get(1).and_then(|o| o.as_float().ok()) {
                     font_size = size as f64;
                 }
-                current_font = op.operands.first().and_then(|o| o.as_name().ok()).and_then(|name| font_widths.get(name));
+                current_font = op
+                    .operands
+                    .first()
+                    .and_then(|o| o.as_name().ok())
+                    .and_then(|name| font_widths.get(name));
                 kept.push(op);
             }
             "TL" => {
@@ -384,7 +482,19 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
             }
             "Tj" => {
                 if let Some(Object::String(bytes, _)) = op.operands.last_mut() {
-                    let adv = redact_string_bytes(bytes, 0.0, &tm, &ctm, font_size, current_font, AVG_GLYPH_WIDTH_EM, char_spacing, word_spacing, h_scale, boxes);
+                    let adv = redact_string_bytes(
+                        bytes,
+                        0.0,
+                        &tm,
+                        &ctm,
+                        font_size,
+                        current_font,
+                        AVG_GLYPH_WIDTH_EM,
+                        char_spacing,
+                        word_spacing,
+                        h_scale,
+                        boxes,
+                    );
                     tm = advance_tm(&tm, adv, font_size, h_scale);
                 }
                 kept.push(op);
@@ -393,7 +503,19 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
                 tlm = Matrix::translation(0.0, -leading).then(&tlm);
                 tm = tlm;
                 if let Some(Object::String(bytes, _)) = op.operands.last_mut() {
-                    let adv = redact_string_bytes(bytes, 0.0, &tm, &ctm, font_size, current_font, AVG_GLYPH_WIDTH_EM, char_spacing, word_spacing, h_scale, boxes);
+                    let adv = redact_string_bytes(
+                        bytes,
+                        0.0,
+                        &tm,
+                        &ctm,
+                        font_size,
+                        current_font,
+                        AVG_GLYPH_WIDTH_EM,
+                        char_spacing,
+                        word_spacing,
+                        h_scale,
+                        boxes,
+                    );
                     tm = advance_tm(&tm, adv, font_size, h_scale);
                 }
                 kept.push(op);
@@ -408,7 +530,19 @@ fn strip_text_in_boxes(operations: Vec<Operation>, boxes: &[(f64, f64, f64, f64)
                     for elem in arr.iter_mut() {
                         match elem {
                             Object::String(bytes, _) => {
-                                offset = redact_string_bytes(bytes, offset, &tm, &ctm, font_size, current_font, AVG_GLYPH_WIDTH_EM, char_spacing, word_spacing, h_scale, boxes);
+                                offset = redact_string_bytes(
+                                    bytes,
+                                    offset,
+                                    &tm,
+                                    &ctm,
+                                    font_size,
+                                    current_font,
+                                    AVG_GLYPH_WIDTH_EM,
+                                    char_spacing,
+                                    word_spacing,
+                                    h_scale,
+                                    boxes,
+                                );
                             }
                             other => {
                                 if let Ok(num) = other.as_float() {
@@ -450,7 +584,10 @@ fn matrix_from_operands(operands: &[Object]) -> Option<Matrix> {
     if operands.len() < 6 {
         return None;
     }
-    let v: Vec<f64> = operands[..6].iter().map(|o| o.as_float().ok().map(|f| f as f64)).collect::<Option<_>>()?;
+    let v: Vec<f64> = operands[..6]
+        .iter()
+        .map(|o| o.as_float().ok().map(|f| f as f64))
+        .collect::<Option<_>>()?;
     Some(Matrix::new(v[0], v[1], v[2], v[3], v[4], v[5]))
 }
 
@@ -509,7 +646,15 @@ fn redact_string_bytes(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn char_hits_box(tm: &Matrix, ctm: &Matrix, font_size: f64, h_scale: f64, x0: f64, x1: f64, boxes: &[(f64, f64, f64, f64)]) -> bool {
+fn char_hits_box(
+    tm: &Matrix,
+    ctm: &Matrix,
+    font_size: f64,
+    h_scale: f64,
+    x0: f64,
+    x1: f64,
+    boxes: &[(f64, f64, f64, f64)],
+) -> bool {
     if font_size <= 0.0 {
         return false;
     }
@@ -523,9 +668,15 @@ fn char_hits_box(tm: &Matrix, ctm: &Matrix, font_size: f64, h_scale: f64, x0: f6
         effective.apply(x1, 1.0),
     ];
     let min_x = corners.iter().map(|p| p.0).fold(f64::INFINITY, f64::min);
-    let max_x = corners.iter().map(|p| p.0).fold(f64::NEG_INFINITY, f64::max);
+    let max_x = corners
+        .iter()
+        .map(|p| p.0)
+        .fold(f64::NEG_INFINITY, f64::max);
     let min_y = corners.iter().map(|p| p.1).fold(f64::INFINITY, f64::min);
-    let max_y = corners.iter().map(|p| p.1).fold(f64::NEG_INFINITY, f64::max);
+    let max_y = corners
+        .iter()
+        .map(|p| p.1)
+        .fold(f64::NEG_INFINITY, f64::max);
 
     boxes.iter().any(|&(bx, by, bw, bh)| {
         let (box_x0, box_x1) = (bx, bx + bw);
@@ -547,18 +698,35 @@ pub(crate) struct Matrix {
 }
 
 impl Matrix {
-    pub(crate) const IDENTITY: Matrix = Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: 0.0, f: 0.0 };
+    pub(crate) const IDENTITY: Matrix = Matrix {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 0.0,
+        f: 0.0,
+    };
 
     pub(crate) fn new(a: f64, b: f64, c: f64, d: f64, e: f64, f: f64) -> Self {
         Matrix { a, b, c, d, e, f }
     }
 
     pub(crate) fn translation(tx: f64, ty: f64) -> Self {
-        Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: tx, f: ty }
+        Matrix {
+            a: 1.0,
+            b: 0.0,
+            c: 0.0,
+            d: 1.0,
+            e: tx,
+            f: ty,
+        }
     }
 
     pub(crate) fn apply(&self, x: f64, y: f64) -> (f64, f64) {
-        (x * self.a + y * self.c + self.e, x * self.b + y * self.d + self.f)
+        (
+            x * self.a + y * self.c + self.e,
+            x * self.b + y * self.d + self.f,
+        )
     }
 
     /// Returns `self` concatenated with `other`, such that applying a point
@@ -583,7 +751,10 @@ mod tests {
 
     fn pdf_with_text(path: &std::path::Path, lines: &[(&str, f64, f64)]) {
         let mut doc = Document::with_version("1.7");
-        let mut ops = vec![Operation::new("BT", vec![]), Operation::new("Tf", vec!["F1".into(), 24.0.into()])];
+        let mut ops = vec![
+            Operation::new("BT", vec![]),
+            Operation::new("Tf", vec!["F1".into(), 24.0.into()]),
+        ];
         for &(text, x, y) in lines {
             ops.push(Operation::new("Td", vec![x.into(), y.into()]));
             ops.push(Operation::new("Tj", vec![Object::string_literal(text)]));
@@ -636,19 +807,37 @@ mod tests {
     fn redacts_text_inside_box_leaves_text_outside_alone() {
         let input = temp_dir().join("redact_test_input.pdf");
         let output = temp_dir().join("redact_test_output.pdf");
-        pdf_with_text(&input, &[("secret ssn 123-45-6789", 50.0, 700.0), ("keep this line", 50.0, 500.0)]);
+        pdf_with_text(
+            &input,
+            &[
+                ("secret ssn 123-45-6789", 50.0, 700.0),
+                ("keep this line", 50.0, 500.0),
+            ],
+        );
 
         content_redact(
             input.to_string_lossy().into_owned(),
-            vec![RedactionArea { page: 1, x: 0.0, y: 690.0, width: 400.0, height: 40.0 }],
+            vec![RedactionArea {
+                page: 1,
+                x: 0.0,
+                y: 690.0,
+                width: 400.0,
+                height: 40.0,
+            }],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
 
         let doc = Document::load(&output).unwrap();
         let text = page_text(&doc);
-        assert!(!text.contains("123-45-6789"), "redacted text should be gone from the content stream: {text}");
-        assert!(text.contains("keep this line"), "text outside the redaction box should survive: {text}");
+        assert!(
+            !text.contains("123-45-6789"),
+            "redacted text should be gone from the content stream: {text}"
+        );
+        assert!(
+            text.contains("keep this line"),
+            "text outside the redaction box should survive: {text}"
+        );
     }
 
     /// Same as `pdf_with_text` but the font declares an explicit
@@ -711,7 +900,10 @@ mod tests {
             Operation::new("BT", vec![]),
             Operation::new("Tf", vec!["F1".into(), 24.0.into()]),
             Operation::new("Td", vec![x.into(), y.into()]),
-            Operation::new("Tj", vec![Object::String(encoded, lopdf::StringFormat::Hexadecimal)]),
+            Operation::new(
+                "Tj",
+                vec![Object::String(encoded, lopdf::StringFormat::Hexadecimal)],
+            ),
             Operation::new("ET", vec![]),
         ];
         let content = Content { operations: ops }.encode().unwrap();
@@ -781,17 +973,35 @@ mod tests {
 
         content_redact(
             input.to_string_lossy().into_owned(),
-            vec![RedactionArea { page: 1, x: 127.0, y: 690.0, width: 38.0, height: 40.0 }],
+            vec![RedactionArea {
+                page: 1,
+                x: 127.0,
+                y: 690.0,
+                width: 38.0,
+                height: 40.0,
+            }],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
 
         let doc = Document::load(&output).unwrap();
         let text = cid_page_text(&doc);
-        assert!(!text.contains("John"), "targeted word should be redacted: {text}");
-        assert!(text.contains("Contact"), "word before the redacted one should survive: {text}");
-        assert!(text.contains("Doe"), "word after the redacted one should survive: {text}");
-        assert!(text.contains("here"), "rest of the line should survive: {text}");
+        assert!(
+            !text.contains("John"),
+            "targeted word should be redacted: {text}"
+        );
+        assert!(
+            text.contains("Contact"),
+            "word before the redacted one should survive: {text}"
+        );
+        assert!(
+            text.contains("Doe"),
+            "word after the redacted one should survive: {text}"
+        );
+        assert!(
+            text.contains("here"),
+            "rest of the line should survive: {text}"
+        );
     }
 
     #[test]
@@ -807,26 +1017,53 @@ mod tests {
 
         content_redact(
             input.to_string_lossy().into_owned(),
-            vec![RedactionArea { page: 1, x: 127.0, y: 690.0, width: 38.0, height: 40.0 }],
+            vec![RedactionArea {
+                page: 1,
+                x: 127.0,
+                y: 690.0,
+                width: 38.0,
+                height: 40.0,
+            }],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
 
         let doc = Document::load(&output).unwrap();
         let text = page_text(&doc);
-        assert!(!text.contains("John"), "targeted word should be redacted: {text}");
-        assert!(text.contains("Contact"), "word before the redacted one should survive: {text}");
-        assert!(text.contains("Doe"), "word after the redacted one should survive: {text}");
-        assert!(text.contains("here"), "rest of the line should survive: {text}");
+        assert!(
+            !text.contains("John"),
+            "targeted word should be redacted: {text}"
+        );
+        assert!(
+            text.contains("Contact"),
+            "word before the redacted one should survive: {text}"
+        );
+        assert!(
+            text.contains("Doe"),
+            "word after the redacted one should survive: {text}"
+        );
+        assert!(
+            text.contains("here"),
+            "rest of the line should survive: {text}"
+        );
     }
 
     /// Same page/font as `pdf_with_text_and_widths` (0.4em/glyph Courier) but
     /// injects arbitrary text-state operators (`Tc`/`Tw`/`Tz`) between `Tf` and
     /// the text `Td`/`Tj`, so a test can reproduce the browser/HTML-to-PDF
     /// spacing that drove the real-world mis-redaction.
-    fn pdf_with_text_widths_and_state(path: &std::path::Path, text: &str, x: f64, y: f64, state: Vec<Operation>) {
+    fn pdf_with_text_widths_and_state(
+        path: &std::path::Path,
+        text: &str,
+        x: f64,
+        y: f64,
+        state: Vec<Operation>,
+    ) {
         let mut doc = Document::with_version("1.7");
-        let mut ops = vec![Operation::new("BT", vec![]), Operation::new("Tf", vec!["F1".into(), 24.0.into()])];
+        let mut ops = vec![
+            Operation::new("BT", vec![]),
+            Operation::new("Tf", vec!["F1".into(), 24.0.into()]),
+        ];
         ops.extend(state);
         ops.push(Operation::new("Td", vec![x.into(), y.into()]));
         ops.push(Operation::new("Tj", vec![Object::string_literal(text)]));
@@ -882,7 +1119,9 @@ mod tests {
             "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Courier",
             "FirstChar" => 32, "LastChar" => 126, "Widths" => widths,
         });
-        let resources_id = doc.add_object(dictionary! { "Font" => dictionary! { "F1" => Object::Reference(font_id) } });
+        let resources_id = doc.add_object(
+            dictionary! { "Font" => dictionary! { "F1" => Object::Reference(font_id) } },
+        );
         let pages_id = doc.new_object_id();
         let page_id = doc.add_object(dictionary! {
             "Type" => "Page", "Parent" => pages_id, "Contents" => content_id,
@@ -911,15 +1150,27 @@ mod tests {
 
         content_redact(
             input.to_string_lossy().into_owned(),
-            vec![RedactionArea { page: 1, x: 126.0, y: 690.0, width: 40.0, height: 40.0 }],
+            vec![RedactionArea {
+                page: 1,
+                x: 126.0,
+                y: 690.0,
+                width: 40.0,
+                height: 40.0,
+            }],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
 
         let doc = Document::load(&output).unwrap();
         let text = page_text(&doc);
-        assert!(!text.contains("John"), "second-run target should be redacted: {text}");
-        assert!(text.contains("Contact"), "earlier run sharing the Td should survive: {text}");
+        assert!(
+            !text.contains("John"),
+            "second-run target should be redacted: {text}"
+        );
+        assert!(
+            text.contains("Contact"),
+            "earlier run sharing the Td should survive: {text}"
+        );
     }
 
     #[test]
@@ -930,19 +1181,37 @@ mod tests {
         // glyph is only 9.6pt wide and lands the box on the wrong characters.
         let input = temp_dir().join("redact_test_tc_input.pdf");
         let output = temp_dir().join("redact_test_tc_output.pdf");
-        pdf_with_text_widths_and_state(&input, "Contact John Doe here", 50.0, 700.0, vec![Operation::new("Tc", vec![4.0.into()])]);
+        pdf_with_text_widths_and_state(
+            &input,
+            "Contact John Doe here",
+            50.0,
+            700.0,
+            vec![Operation::new("Tc", vec![4.0.into()])],
+        );
 
         content_redact(
             input.to_string_lossy().into_owned(),
-            vec![RedactionArea { page: 1, x: 158.0, y: 690.0, width: 52.0, height: 40.0 }],
+            vec![RedactionArea {
+                page: 1,
+                x: 158.0,
+                y: 690.0,
+                width: 52.0,
+                height: 40.0,
+            }],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
 
         let doc = Document::load(&output).unwrap();
         let text = page_text(&doc);
-        assert!(!text.contains("John"), "targeted word should be redacted: {text}");
-        assert!(text.contains("Contact"), "word before should survive: {text}");
+        assert!(
+            !text.contains("John"),
+            "targeted word should be redacted: {text}"
+        );
+        assert!(
+            text.contains("Contact"),
+            "word before should survive: {text}"
+        );
         assert!(text.contains("Doe"), "word after should survive: {text}");
         assert!(text.contains("here"), "rest of line should survive: {text}");
     }
@@ -954,19 +1223,37 @@ mod tests {
         // "John" near x=126 and blank "Contact" glyphs instead.
         let input = temp_dir().join("redact_test_tz_input.pdf");
         let output = temp_dir().join("redact_test_tz_output.pdf");
-        pdf_with_text_widths_and_state(&input, "Contact John Doe here", 50.0, 700.0, vec![Operation::new("Tz", vec![50.0.into()])]);
+        pdf_with_text_widths_and_state(
+            &input,
+            "Contact John Doe here",
+            50.0,
+            700.0,
+            vec![Operation::new("Tz", vec![50.0.into()])],
+        );
 
         content_redact(
             input.to_string_lossy().into_owned(),
-            vec![RedactionArea { page: 1, x: 88.0, y: 690.0, width: 20.0, height: 40.0 }],
+            vec![RedactionArea {
+                page: 1,
+                x: 88.0,
+                y: 690.0,
+                width: 20.0,
+                height: 40.0,
+            }],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
 
         let doc = Document::load(&output).unwrap();
         let text = page_text(&doc);
-        assert!(!text.contains("John"), "targeted word should be redacted: {text}");
-        assert!(text.contains("Contact"), "word before should survive: {text}");
+        assert!(
+            !text.contains("John"),
+            "targeted word should be redacted: {text}"
+        );
+        assert!(
+            text.contains("Contact"),
+            "word before should survive: {text}"
+        );
         assert!(text.contains("Doe"), "word after should survive: {text}");
         assert!(text.contains("here"), "rest of line should survive: {text}");
     }
@@ -979,19 +1266,37 @@ mod tests {
         // and blanks "ohn D" instead of "John".
         let input = temp_dir().join("redact_test_tw_input.pdf");
         let output = temp_dir().join("redact_test_tw_output.pdf");
-        pdf_with_text_widths_and_state(&input, "Contact John Doe here", 50.0, 700.0, vec![Operation::new("Tw", vec![10.0.into()])]);
+        pdf_with_text_widths_and_state(
+            &input,
+            "Contact John Doe here",
+            50.0,
+            700.0,
+            vec![Operation::new("Tw", vec![10.0.into()])],
+        );
 
         content_redact(
             input.to_string_lossy().into_owned(),
-            vec![RedactionArea { page: 1, x: 136.0, y: 690.0, width: 40.0, height: 40.0 }],
+            vec![RedactionArea {
+                page: 1,
+                x: 136.0,
+                y: 690.0,
+                width: 40.0,
+                height: 40.0,
+            }],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
 
         let doc = Document::load(&output).unwrap();
         let text = page_text(&doc);
-        assert!(!text.contains("John"), "targeted word should be redacted: {text}");
-        assert!(text.contains("Contact"), "word before should survive: {text}");
+        assert!(
+            !text.contains("John"),
+            "targeted word should be redacted: {text}"
+        );
+        assert!(
+            text.contains("Contact"),
+            "word before should survive: {text}"
+        );
         assert!(text.contains("Doe"), "word after should survive: {text}");
         assert!(text.contains("here"), "rest of line should survive: {text}");
     }
@@ -1009,17 +1314,35 @@ mod tests {
         // AVG_GLYPH_WIDTH_EM 0.65 => ~15.6pt/char, starting at x=50).
         content_redact(
             input.to_string_lossy().into_owned(),
-            vec![RedactionArea { page: 1, x: 175.0, y: 690.0, width: 60.0, height: 40.0 }],
+            vec![RedactionArea {
+                page: 1,
+                x: 175.0,
+                y: 690.0,
+                width: 60.0,
+                height: 40.0,
+            }],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
 
         let doc = Document::load(&output).unwrap();
         let text = page_text(&doc);
-        assert!(!text.contains("John"), "targeted word should be redacted: {text}");
-        assert!(text.contains("Contact"), "word before the redacted one should survive: {text}");
-        assert!(text.contains("Doe"), "word after the redacted one should survive: {text}");
-        assert!(text.contains("here"), "rest of the line should survive: {text}");
+        assert!(
+            !text.contains("John"),
+            "targeted word should be redacted: {text}"
+        );
+        assert!(
+            text.contains("Contact"),
+            "word before the redacted one should survive: {text}"
+        );
+        assert!(
+            text.contains("Doe"),
+            "word after the redacted one should survive: {text}"
+        );
+        assert!(
+            text.contains("here"),
+            "rest of the line should survive: {text}"
+        );
     }
 
     #[test]
@@ -1030,7 +1353,13 @@ mod tests {
 
         content_redact(
             input.to_string_lossy().into_owned(),
-            vec![RedactionArea { page: 1, x: 0.0, y: 690.0, width: 400.0, height: 40.0 }],
+            vec![RedactionArea {
+                page: 1,
+                x: 0.0,
+                y: 690.0,
+                width: 400.0,
+                height: 40.0,
+            }],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
@@ -1039,7 +1368,10 @@ mod tests {
         let page_id = *doc.get_pages().values().next().unwrap();
         let bytes = doc.get_page_content(page_id).unwrap();
         let content = Content::decode(&bytes).unwrap();
-        assert!(content.operations.iter().any(|op| op.operator == "re"), "expected a filled rectangle over the redaction area");
+        assert!(
+            content.operations.iter().any(|op| op.operator == "re"),
+            "expected a filled rectangle over the redaction area"
+        );
     }
 
     #[test]

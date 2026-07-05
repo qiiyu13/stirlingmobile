@@ -65,7 +65,10 @@ fn merge_documents(documents: Vec<Document>) -> Document {
     let pages_id = merged.new_object_id();
     let mut kids = Vec::with_capacity(all_page_ids.len());
     for page_id in &all_page_ids {
-        if let Ok(page_dict) = merged.get_object_mut(*page_id).and_then(|o| o.as_dict_mut()) {
+        if let Ok(page_dict) = merged
+            .get_object_mut(*page_id)
+            .and_then(|o| o.as_dict_mut())
+        {
             page_dict.set("Parent", Object::Reference(pages_id));
         }
         kids.push(Object::Reference(*page_id));

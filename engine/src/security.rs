@@ -10,8 +10,8 @@ use md5::{Digest, Md5};
 /// here are implemented against the spec (ISO 32000-1 §7.6) directly rather
 /// than reusing lopdf's encryption module.
 const PAD_BYTES: [u8; 32] = [
-    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08, 0x2E, 0x2E, 0x00,
-    0xB6, 0xD0, 0x68, 0x3E, 0x80, 0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
+    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+    0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80, 0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
 ];
 const KEY_LEN: usize = 16; // AES-128
 /// "Allow everything" permissions bitfield: reserved bits 1-2 clear, all
@@ -36,7 +36,8 @@ pub fn add_password(
     })?;
     if doc.is_encrypted() {
         return Err(EngineError::WriteFailed {
-            reason: "document is already password protected; remove the existing password first".into(),
+            reason: "document is already password protected; remove the existing password first"
+                .into(),
         });
     }
 
@@ -94,9 +95,10 @@ pub fn add_password(
     let encrypt_id = doc.add_object(Object::Dictionary(encrypt_dict));
     doc.trailer.set("Encrypt", Object::Reference(encrypt_id));
 
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -116,9 +118,10 @@ pub fn remove_password(
     })?;
 
     if !doc.is_encrypted() {
-        doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-            reason: e.to_string(),
-        })?;
+        doc.save(&output_path)
+            .map_err(|e| EngineError::WriteFailed {
+                reason: e.to_string(),
+            })?;
         return Ok(());
     }
 
@@ -185,9 +188,10 @@ pub fn remove_password(
 
     doc.trailer.remove(b"Encrypt");
     doc.trailer.remove(b"ID");
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -224,7 +228,12 @@ fn compute_owner_hash(owner_password: &[u8], user_password: &[u8]) -> [u8; 32] {
 }
 
 /// Algorithm 2 (ISO 32000-1 §7.6.3.3): computes the base file encryption key.
-fn compute_base_key(user_password: &[u8], owner_hash: &[u8], permissions: i32, file_id: &[u8]) -> Vec<u8> {
+fn compute_base_key(
+    user_password: &[u8],
+    owner_hash: &[u8],
+    permissions: i32,
+    file_id: &[u8],
+) -> Vec<u8> {
     let mut key = Vec::with_capacity(32 + 32 + 4 + file_id.len());
     key.extend_from_slice(&padded_password(user_password));
     key.extend_from_slice(owner_hash);
@@ -462,6 +471,9 @@ mod tests {
         let found_marker = recovered_doc.objects.values().any(|obj| {
             matches!(obj, Object::String(bytes, _) if bytes == b"a marker string to verify decryption")
         });
-        assert!(found_marker, "decrypted string content should match the original plaintext");
+        assert!(
+            found_marker,
+            "decrypted string content should match the original plaintext"
+        );
     }
 }

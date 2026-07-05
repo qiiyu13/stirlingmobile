@@ -33,12 +33,10 @@ fn field_value(dict: &lopdf::Dictionary) -> Option<String> {
 }
 
 fn field_name(dict: &lopdf::Dictionary) -> Option<String> {
-    dict.get(b"T")
-        .ok()
-        .and_then(|o| match o {
-            Object::String(s, _) => Some(String::from_utf8_lossy(s).to_string()),
-            _ => None,
-        })
+    dict.get(b"T").ok().and_then(|o| match o {
+        Object::String(s, _) => Some(String::from_utf8_lossy(s).to_string()),
+        _ => None,
+    })
 }
 
 fn field_type(dict: &lopdf::Dictionary) -> Option<String> {
@@ -64,10 +62,7 @@ fn walk_fields(
             _ => continue,
         };
 
-        let kids = dict
-            .get(b"Kids")
-            .ok()
-            .and_then(|o| o.as_array().ok());
+        let kids = dict.get(b"Kids").ok().and_then(|o| o.as_array().ok());
 
         if let Some(kids_arr) = kids {
             let first_is_widget = kids_arr
@@ -246,16 +241,20 @@ pub fn forms_fill(
         .cloned()
         .unwrap_or_default();
 
-    if let Ok(af) = doc.get_object_mut(acroform_id).and_then(|o| o.as_dict_mut()) {
+    if let Ok(af) = doc
+        .get_object_mut(acroform_id)
+        .and_then(|o| o.as_dict_mut())
+    {
         af.set("NeedAppearances", true);
     }
 
     fill_recursive(&mut doc, &fields, &value_map);
 
     doc.compress();
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -352,10 +351,7 @@ pub fn forms_flatten(path: String, output_path: String) -> Result<(), EngineErro
                 None => continue,
             };
 
-            let ap = annot_dict
-                .get(b"AP")
-                .ok()
-                .and_then(|o| o.as_dict().ok());
+            let ap = annot_dict.get(b"AP").ok().and_then(|o| o.as_dict().ok());
             let ap_n = ap
                 .and_then(|ap_dict| ap_dict.get(b"N").ok())
                 .and_then(|o| o.as_reference().ok());
@@ -369,11 +365,7 @@ pub fn forms_flatten(path: String, output_path: String) -> Result<(), EngineErro
                 _ => continue,
             };
 
-            let ap_dict = doc
-                .get_dictionary(ap_n)
-                .ok()
-                .cloned()
-                .unwrap_or_default();
+            let ap_dict = doc.get_dictionary(ap_n).ok().cloned().unwrap_or_default();
 
             let xobj_id = doc.new_object_id();
             let bbox: Vec<Object> = vec![
@@ -393,8 +385,7 @@ pub fn forms_flatten(path: String, output_path: String) -> Result<(), EngineErro
                 }
             }
             let xobj_stream = Stream::new(xobj_dict, ap_bytes);
-            doc.objects
-                .insert(xobj_id, Object::Stream(xobj_stream));
+            doc.objects.insert(xobj_id, Object::Stream(xobj_stream));
 
             let name = format!("FW{}", idx);
             register_xobject(&mut doc, *page_id, &name, xobj_id);
@@ -403,10 +394,8 @@ pub fn forms_flatten(path: String, output_path: String) -> Result<(), EngineErro
             let h = rect[3] - rect[1];
             let x = rect[0];
             let y = rect[1];
-            widget_ops.push(
-                format!("q {w:.3} 0 0 {h:.3} {x:.3} {y:.3} cm /{name} Do Q ")
-                    .into_bytes(),
-            );
+            widget_ops
+                .push(format!("q {w:.3} 0 0 {h:.3} {x:.3} {y:.3} cm /{name} Do Q ").into_bytes());
 
             to_remove.push(idx);
         }
@@ -476,9 +465,10 @@ pub fn forms_flatten(path: String, output_path: String) -> Result<(), EngineErro
     }
 
     doc.compress();
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -604,7 +594,7 @@ mod tests {
             .unwrap()
             .as_str()
             .unwrap();
-        assert_eq!(        new_val.to_vec(), b"Jane".to_vec());
+        assert_eq!(new_val.to_vec(), b"Jane".to_vec());
     }
 
     #[test]
@@ -661,7 +651,10 @@ mod tests {
         let result = Document::load(&output).unwrap();
         let catalog_id = result.trailer.get(b"Root").unwrap().as_reference().unwrap();
         let cat = result.get_dictionary(catalog_id).unwrap();
-        assert!(!cat.has(b"AcroForm"), "AcroForm should be removed after flatten");
+        assert!(
+            !cat.has(b"AcroForm"),
+            "AcroForm should be removed after flatten"
+        );
 
         let page_id = *result.get_pages().get(&1).unwrap();
         let page = result.get_dictionary(page_id).unwrap();
@@ -671,4 +664,3 @@ mod tests {
         );
     }
 }
-

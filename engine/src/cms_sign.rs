@@ -1,12 +1,12 @@
 use crate::EngineError;
-use const_oid::db::rfc5911::{ID_CONTENT_TYPE, ID_DATA, ID_MESSAGE_DIGEST, ID_SIGNED_DATA};
-use const_oid::db::rfc5912::{ID_SHA_256, RSA_ENCRYPTION, SHA_256_WITH_RSA_ENCRYPTION};
 use cms::cert::{CertificateChoices, IssuerAndSerialNumber};
 use cms::content_info::{CmsVersion, ContentInfo};
 use cms::signed_data::{
-    CertificateSet, DigestAlgorithmIdentifiers, EncapsulatedContentInfo, SignedData, SignerIdentifier, SignerInfo,
-    SignerInfos,
+    CertificateSet, DigestAlgorithmIdentifiers, EncapsulatedContentInfo, SignedData,
+    SignerIdentifier, SignerInfo, SignerInfos,
 };
+use const_oid::db::rfc5911::{ID_CONTENT_TYPE, ID_DATA, ID_MESSAGE_DIGEST, ID_SIGNED_DATA};
+use const_oid::db::rfc5912::{ID_SHA_256, RSA_ENCRYPTION, SHA_256_WITH_RSA_ENCRYPTION};
 use der::asn1::{OctetString, SetOfVec};
 use der::{Any, Decode, Encode};
 use rsa::pkcs1v15::SigningKey;
@@ -46,17 +46,22 @@ pub fn build_detached_signature(
     let message_digest_attr = Attribute {
         oid: ID_MESSAGE_DIGEST,
         values: SetOfVec::try_from(vec![AttributeValue::from(
-            Any::encode_from(&OctetString::new(content_digest.to_vec()).map_err(der_err)?).map_err(der_err)?,
+            Any::encode_from(&OctetString::new(content_digest.to_vec()).map_err(der_err)?)
+                .map_err(der_err)?,
         )])
         .map_err(der_err)?,
     };
-    let signed_attrs = SetOfVec::try_from(vec![content_type_attr, message_digest_attr]).map_err(der_err)?;
+    let signed_attrs =
+        SetOfVec::try_from(vec![content_type_attr, message_digest_attr]).map_err(der_err)?;
     let signed_attrs_der = signed_attrs.to_der().map_err(der_err)?;
 
     let signing_key = SigningKey::<Sha256>::new(private_key.clone());
-    let signature = signing_key.try_sign(&signed_attrs_der).map_err(|e| EngineError::WriteFailed {
-        reason: format!("signing failed: {e}"),
-    })?;
+    let signature =
+        signing_key
+            .try_sign(&signed_attrs_der)
+            .map_err(|e| EngineError::WriteFailed {
+                reason: format!("signing failed: {e}"),
+            })?;
 
     let signer_info = SignerInfo {
         version: CmsVersion::V1,
@@ -83,7 +88,8 @@ pub fn build_detached_signature(
 
     let signed_data = SignedData {
         version: CmsVersion::V1,
-        digest_algorithms: DigestAlgorithmIdentifiers::try_from(vec![sha256_alg]).map_err(der_err)?,
+        digest_algorithms: DigestAlgorithmIdentifiers::try_from(vec![sha256_alg])
+            .map_err(der_err)?,
         encap_content_info: EncapsulatedContentInfo {
             econtent_type: ID_DATA,
             econtent: None,

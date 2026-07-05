@@ -115,9 +115,9 @@ pub(crate) fn srgb_icc_profile() -> Vec<u8> {
     header[12..16].copy_from_slice(b"mntr"); // device class: display device
     header[16..20].copy_from_slice(b"RGB "); // color space
     header[20..24].copy_from_slice(b"XYZ "); // PCS
-    // datetime (24-35): left zero.
+                                             // datetime (24-35): left zero.
     header[36..40].copy_from_slice(b"acsp"); // profile file signature
-    // platform / flags / manufacturer / model / attributes / rendering intent: left zero.
+                                             // platform / flags / manufacturer / model / attributes / rendering intent: left zero.
     header[68..80].copy_from_slice(&{
         let mut illum = Vec::with_capacity(12);
         illum.extend_from_slice(&s15_fixed16(WHITE_POINT.0));

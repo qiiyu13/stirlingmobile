@@ -1,0 +1,86 @@
+package com.stirlingmobile.ui
+
+import android.content.Context
+import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import uniffi.stirling_engine.extractImages
+import java.io.File
+import java.util.UUID
+
+data class ExtractImagesUiState(
+    val statusMessage: String = "Select a PDF",
+    val inputPath: String? = null,
+    val extractedPaths: List<String> = emptyList(),
+)
+
+class ExtractImagesViewModel : ViewModel() {
+    private val _state = MutableStateFlow(ExtractImagesUiState())
+    val state: StateFlow<ExtractImagesUiState> = _state
+
+    fun usePipelineFile(path: String) {
+        _state.value = ExtractImagesUiState(statusMessage = "From pipeline", inputPath = path)
+    }
+
+    fun onFilePicked(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            _state.value = state.value.copy(statusMessage = "Loading…")
+            try {
+                val inputPath = withContext(Dispatchers.IO) {
+                    val workingDir = File(context.filesDir, "working").apply { mkdirs() }
+                    val input = File(workingDir, "extract_images_input.pdf")
+                    context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
+                    input.absolutePath
+                }
+                _state.value = ExtractImagesUiState(statusMessage = "Ready", inputPath = inputPath)
+            } catch (e: Exception) {
+                _state.value = state.value.copy(statusMessage = "Failed to read: ${e.message}")
+            }
+        }
+    }
+
+    fun onExtractClicked() {
+        val inputPath = state.value.inputPath ?: return
+        viewModelScope.launch {
+            _state.value = state.value.copy(statusMessage = "Extracting…")
+            val paths = try {
+                withContext(Dispatchers.IO) {
+                    val outDir = File(File(inputPath).parentFile, "extracted_${UUID.randomUUID()}").apply { mkdirs() }
+                    extractImages(inputPath, outDir.absolutePath)
+                }
+            } catch (e: Exception) {
+                _state.value = state.value.copy(statusMessage = "Extraction failed: ${e.message}")
+                return@launch
+            }
+            _state.value = state.value.copy(
+                statusMessage = "Extracted ${paths.size} image(s)",
+                extractedPaths = paths,
+            )
+        }
+    }
+
+    fun onSaveFolderChosen(context: Context, folderUri: Uri) {
+        val paths = state.value.extractedPaths
+        if (paths.isEmpty()) return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val folder = DocumentFile.fromTreeUri(context, folderUri)!!
+                for (path in paths) {
+                    val file = File(path)
+                    val mime = if (file.extension == "jpg") "image/jpeg" else "image/png"
+                    val dest = folder.createFile(mime, file.name) ?: continue
+                    context.contentResolver.openOutputStream(dest.uri)!!.use { output ->
+                        file.inputStream().use { it.copyTo(output) }
+                    }
+                }
+            }
+            _state.value = state.value.copy(statusMessage = "Saved ${paths.size} image(s).")
+        }
+    }
+}

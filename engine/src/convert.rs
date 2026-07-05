@@ -9,7 +9,10 @@ use std::io::Cursor;
 /// (`DCTDecode`) to avoid a lossy re-encode; everything else the `image`
 /// crate can decode (PNG, ...) is re-encoded to JPEG quality 92.
 #[uniffi::export]
-pub fn convert_images_to_pdf(input_paths: Vec<String>, output_path: String) -> Result<(), EngineError> {
+pub fn convert_images_to_pdf(
+    input_paths: Vec<String>,
+    output_path: String,
+) -> Result<(), EngineError> {
     if input_paths.is_empty() {
         return Err(EngineError::NoInput);
     }
@@ -23,10 +26,11 @@ pub fn convert_images_to_pdf(input_paths: Vec<String>, output_path: String) -> R
             path: path.clone(),
             reason: e.to_string(),
         })?;
-        let (jpeg_bytes, width, height) = prepare_jpeg(&bytes).ok_or_else(|| EngineError::ReadFailed {
-            path: path.clone(),
-            reason: "unrecognized or unsupported image format".to_string(),
-        })?;
+        let (jpeg_bytes, width, height) =
+            prepare_jpeg(&bytes).ok_or_else(|| EngineError::ReadFailed {
+                path: path.clone(),
+                reason: "unrecognized or unsupported image format".to_string(),
+            })?;
 
         let image_id = doc.add_object(Stream::new(
             dictionary! {
@@ -69,9 +73,10 @@ pub fn convert_images_to_pdf(input_paths: Vec<String>, output_path: String) -> R
     });
     doc.trailer.set("Root", Object::Reference(catalog_id));
 
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -90,7 +95,12 @@ fn prepare_jpeg(bytes: &[u8]) -> Option<(Vec<u8>, u32, u32)> {
     let mut cursor = Cursor::new(&mut encoded);
     let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, 92);
     encoder
-        .write_image(decoded.to_rgb8().as_raw(), width, height, image::ExtendedColorType::Rgb8)
+        .write_image(
+            decoded.to_rgb8().as_raw(),
+            width,
+            height,
+            image::ExtendedColorType::Rgb8,
+        )
         .ok()?;
     Some((encoded, width, height))
 }
@@ -119,7 +129,10 @@ mod tests {
         write_png(&b, 50, 80);
 
         convert_images_to_pdf(
-            vec![a.to_string_lossy().into_owned(), b.to_string_lossy().into_owned()],
+            vec![
+                a.to_string_lossy().into_owned(),
+                b.to_string_lossy().into_owned(),
+            ],
             output.to_string_lossy().into_owned(),
         )
         .unwrap();
@@ -133,10 +146,7 @@ mod tests {
             .map(|id| {
                 let page = doc.get_dictionary(*id).unwrap();
                 let bbox = page.get(b"MediaBox").unwrap().as_array().unwrap();
-                (
-                    bbox[2].as_i64().unwrap(),
-                    bbox[3].as_i64().unwrap(),
-                )
+                (bbox[2].as_i64().unwrap(), bbox[3].as_i64().unwrap())
             })
             .collect();
         assert!(media_boxes.contains(&(200, 100)));
@@ -145,7 +155,10 @@ mod tests {
 
     #[test]
     fn images_to_pdf_rejects_empty_input() {
-        let result = convert_images_to_pdf(vec![], temp_dir().join("unused.pdf").to_string_lossy().into_owned());
+        let result = convert_images_to_pdf(
+            vec![],
+            temp_dir().join("unused.pdf").to_string_lossy().into_owned(),
+        );
         assert!(result.is_err());
     }
 }

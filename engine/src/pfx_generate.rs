@@ -30,24 +30,35 @@ pub fn generate_self_signed_pfx(
         .to_vec();
 
     let pkcs8 = rustls_pki_types::PrivatePkcs8KeyDer::from(key_der.clone());
-    let key_pair = rcgen::KeyPair::from_pkcs8_der_and_sign_algo(&pkcs8, &rcgen::PKCS_RSA_SHA256).map_err(|e| {
-        EngineError::WriteFailed {
+    let key_pair = rcgen::KeyPair::from_pkcs8_der_and_sign_algo(&pkcs8, &rcgen::PKCS_RSA_SHA256)
+        .map_err(|e| EngineError::WriteFailed {
             reason: format!("key conversion failed: {e}"),
+        })?;
+    let mut params = rcgen::CertificateParams::new(Vec::<String>::new()).map_err(|e| {
+        EngineError::WriteFailed {
+            reason: format!("certificate parameters failed: {e}"),
         }
     })?;
-    let mut params = rcgen::CertificateParams::new(Vec::<String>::new()).map_err(|e| EngineError::WriteFailed {
-        reason: format!("certificate parameters failed: {e}"),
-    })?;
-    params.distinguished_name.push(rcgen::DnType::CommonName, common_name);
-    let cert = params.self_signed(&key_pair).map_err(|e| EngineError::WriteFailed {
-        reason: format!("certificate generation failed: {e}"),
-    })?;
+    params
+        .distinguished_name
+        .push(rcgen::DnType::CommonName, common_name);
+    let cert = params
+        .self_signed(&key_pair)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: format!("certificate generation failed: {e}"),
+        })?;
     let cert_der = cert.der().to_vec();
 
-    let pfx = p12::PFX::new(&cert_der, &key_der, None, password.expose_secret(), "stirling-mobile")
-        .ok_or_else(|| EngineError::WriteFailed {
-            reason: "PFX packaging failed".to_string(),
-        })?;
+    let pfx = p12::PFX::new(
+        &cert_der,
+        &key_der,
+        None,
+        password.expose_secret(),
+        "stirling-mobile",
+    )
+    .ok_or_else(|| EngineError::WriteFailed {
+        reason: "PFX packaging failed".to_string(),
+    })?;
 
     std::fs::write(&output_path, pfx.to_der()).map_err(|e| EngineError::WriteFailed {
         reason: e.to_string(),

@@ -1,11 +1,18 @@
 uniffi::setup_scaffolding!();
 
+mod add_text;
+mod annotations;
 mod auto_redact;
 mod cms_sign;
 mod compare;
 mod compress;
 mod content_util;
 mod convert;
+mod convert_html;
+mod convert_xml;
+mod dedupe_pages;
+mod draw;
+mod extract_images;
 mod forms;
 mod icc_srgb;
 mod info;
@@ -30,10 +37,17 @@ mod split;
 mod stamp;
 mod watermark;
 
+pub use add_text::content_add_text;
+pub use annotations::content_add_annotation;
 pub use auto_redact::content_auto_redact;
 pub use compare::{tool_compare, PageComparison};
 pub use compress::{compress_pdf_by_level, compress_pdf_custom, compress_pdf_to_target_size};
 pub use convert::convert_images_to_pdf;
+pub use convert_html::convert_pdf_to_html;
+pub use convert_xml::convert_pdf_to_xml;
+pub use dedupe_pages::{pages_detect_duplicates, pages_remove_duplicates};
+pub use draw::{content_draw, pdf_page_size, PageSize, Stroke};
+pub use extract_images::extract_images;
 pub use forms::{forms_fill, forms_flatten, forms_get_fields, FieldFill, FormField};
 pub use info::{describe_images, get_page_count};
 pub use markdown::convert_markdown_to_html;

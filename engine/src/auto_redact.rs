@@ -59,12 +59,19 @@ fn compile_patterns(patterns: &[String]) -> Result<Vec<Regex>, EngineError> {
         .collect()
 }
 
-fn find_matches(input_path: &str, pdfium_lib_dir: &str, regexes: &[Regex]) -> Result<Vec<RedactionArea>, EngineError> {
+fn find_matches(
+    input_path: &str,
+    pdfium_lib_dir: &str,
+    regexes: &[Regex],
+) -> Result<Vec<RedactionArea>, EngineError> {
     let pdfium = bind_pdfium(pdfium_lib_dir)?;
-    let document = pdfium.load_pdf_from_file(input_path, None).map_err(|e| EngineError::ReadFailed {
-        path: input_path.to_string(),
-        reason: e.to_string(),
-    })?;
+    let document =
+        pdfium
+            .load_pdf_from_file(input_path, None)
+            .map_err(|e| EngineError::ReadFailed {
+                path: input_path.to_string(),
+                reason: e.to_string(),
+            })?;
 
     let mut redactions = Vec::new();
     for (index, page) in document.pages().iter().enumerate() {
@@ -105,7 +112,9 @@ fn find_matches(input_path: &str, pdfium_lib_dir: &str, regexes: &[Regex]) -> Re
                     if ce <= cs || cs >= m.end() || ce <= m.start() {
                         continue;
                     }
-                    let Ok(bounds) = c.tight_bounds() else { continue };
+                    let Ok(bounds) = c.tight_bounds() else {
+                        continue;
+                    };
                     min_x = min_x.min(bounds.left().value);
                     max_x = max_x.max(bounds.right().value);
                     min_y = min_y.min(bounds.bottom().value);
@@ -167,7 +176,10 @@ mod tests {
 
     fn one_page_pdf(path: &std::path::Path) {
         let mut doc = Document::with_version("1.7");
-        let content_id = doc.add_object(lopdf::Stream::new(dictionary! {}, Content { operations: vec![] }.encode().unwrap()));
+        let content_id = doc.add_object(lopdf::Stream::new(
+            dictionary! {},
+            Content { operations: vec![] }.encode().unwrap(),
+        ));
         let pages_id = doc.new_object_id();
         let page_id = doc.add_object(dictionary! {
             "Type" => "Page", "Parent" => pages_id, "Contents" => content_id,

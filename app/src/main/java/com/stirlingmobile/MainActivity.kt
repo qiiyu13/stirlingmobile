@@ -21,10 +21,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.ui.AddTextScreen
+import com.stirlingmobile.ui.AnnotationsScreen
 import com.stirlingmobile.ui.AutoRedactScreen
 import com.stirlingmobile.ui.CompareScreen
 import com.stirlingmobile.ui.CompressScreen
+import com.stirlingmobile.ui.ConvertHtmlDocScreen
+import com.stirlingmobile.ui.ConvertXmlScreen
 import com.stirlingmobile.ui.CropScreen
+import com.stirlingmobile.ui.DedupePagesScreen
+import com.stirlingmobile.ui.DrawScreen
+import com.stirlingmobile.ui.ExtractImagesScreen
 import com.stirlingmobile.ui.FormsExtractScreen
 import com.stirlingmobile.ui.FormsFillScreen
 import com.stirlingmobile.ui.FormsFlattenScreen
@@ -56,7 +63,7 @@ import com.stirlingmobile.ui.SignatureStampScreen
 import com.stirlingmobile.ui.SplitScreen
 import com.stirlingmobile.ui.WatermarkScreen
 
-private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, OPTIMIZE, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT, WATERMARK, PAGE_NUMBERS, SANITIZE, METADATA, OCR, FORMS_FILL, FORMS_FLATTEN, FORMS_EXTRACT, REORDER, N_UP, CROP, SCALE, COMPARE, OVERLAY, PDFA }
+private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, OPTIMIZE, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT, WATERMARK, PAGE_NUMBERS, SANITIZE, METADATA, OCR, FORMS_FILL, FORMS_FLATTEN, FORMS_EXTRACT, REORDER, N_UP, CROP, SCALE, COMPARE, OVERLAY, PDFA, CONVERT_XML, CONVERT_HTML_DOC, EXTRACT_IMAGES, DEDUPE_PAGES, ADD_TEXT, DRAW, ANNOTATIONS }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -114,6 +121,13 @@ private fun App() {
         Tool.COMPARE -> CompareScreen()
         Tool.OVERLAY -> OverlayScreen(pipeline = pipeline)
         Tool.PDFA -> PdfaScreen(pipeline = pipeline)
+        Tool.CONVERT_XML -> ConvertXmlScreen(pipeline = pipeline)
+        Tool.CONVERT_HTML_DOC -> ConvertHtmlDocScreen(pipeline = pipeline)
+        Tool.EXTRACT_IMAGES -> ExtractImagesScreen(pipeline = pipeline)
+        Tool.DEDUPE_PAGES -> DedupePagesScreen(pipeline = pipeline)
+        Tool.ADD_TEXT -> AddTextScreen(pipeline = pipeline)
+        Tool.DRAW -> DrawScreen(pipeline = pipeline)
+        Tool.ANNOTATIONS -> AnnotationsScreen(pipeline = pipeline)
     }
     }
 }
@@ -165,5 +179,12 @@ private fun HomeScreen(pipeline: PipelineState, onSelect: (Tool) -> Unit) {
         Button(onClick = { onSelect(Tool.COMPARE) }) { Text("Compare PDFs") }
         Button(onClick = { onSelect(Tool.OVERLAY) }) { Text("Overlay PDFs") }
         Button(onClick = { onSelect(Tool.PDFA) }) { Text("Convert to PDF/A") }
+        Button(onClick = { onSelect(Tool.CONVERT_XML) }) { Text("PDF to XML") }
+        Button(onClick = { onSelect(Tool.CONVERT_HTML_DOC) }) { Text("PDF to Single HTML") }
+        Button(onClick = { onSelect(Tool.EXTRACT_IMAGES) }) { Text("Extract Images") }
+        Button(onClick = { onSelect(Tool.DEDUPE_PAGES) }) { Text("Remove Duplicate Pages") }
+        Button(onClick = { onSelect(Tool.ADD_TEXT) }) { Text("Add Text") }
+        Button(onClick = { onSelect(Tool.DRAW) }) { Text("Draw on PDF") }
+        Button(onClick = { onSelect(Tool.ANNOTATIONS) }) { Text("Annotations") }
     }
 }

@@ -27,9 +27,18 @@ struct Standard {
 
 fn standard_info(standard: &str) -> Result<Standard, EngineError> {
     match standard {
-        "1b" => Ok(Standard { part: "1", min_version: "1.4" }),
-        "2b" => Ok(Standard { part: "2", min_version: "1.7" }),
-        "3b" => Ok(Standard { part: "3", min_version: "1.7" }),
+        "1b" => Ok(Standard {
+            part: "1",
+            min_version: "1.4",
+        }),
+        "2b" => Ok(Standard {
+            part: "2",
+            min_version: "1.7",
+        }),
+        "3b" => Ok(Standard {
+            part: "3",
+            min_version: "1.7",
+        }),
         other => Err(EngineError::WriteFailed {
             reason: format!("unsupported PDF/A standard '{other}' (expected 1b, 2b, or 3b)"),
         }),
@@ -93,14 +102,20 @@ pub fn convert_pdf_to_pdfa(
     let catalog = doc
         .get_object_mut(root_id)
         .and_then(Object::as_dict_mut)
-        .map_err(|e| EngineError::WriteFailed { reason: e.to_string() })?;
-    catalog.set("OutputIntents", Object::Array(vec![Object::Reference(output_intent_id)]));
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
+    catalog.set(
+        "OutputIntents",
+        Object::Array(vec![Object::Reference(output_intent_id)]),
+    );
     catalog.set("Metadata", Object::Reference(metadata_id));
 
     doc.compress();
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -132,11 +147,17 @@ pub fn pdfa_validate(input_path: String, standard: String) -> Result<PdfaValidat
 
     let Ok(root_id) = catalog_id(&doc) else {
         errors.push("PDF has no /Root catalog".to_string());
-        return Ok(PdfaValidation { valid: false, errors });
+        return Ok(PdfaValidation {
+            valid: false,
+            errors,
+        });
     };
     let Ok(catalog) = doc.get_dictionary(root_id) else {
         errors.push("PDF /Root catalog is not a dictionary".to_string());
-        return Ok(PdfaValidation { valid: false, errors });
+        return Ok(PdfaValidation {
+            valid: false,
+            errors,
+        });
     };
 
     check_output_intent(&doc, catalog, &mut errors);
@@ -179,7 +200,10 @@ fn check_output_intent(doc: &Document, catalog: &Dictionary, errors: &mut Vec<St
         .and_then(|o| o.as_stream().ok());
     match profile_stream.and_then(|s| s.decompressed_content().ok()) {
         Some(bytes) if bytes.len() >= 40 && &bytes[36..40] == b"acsp" => {}
-        _ => errors.push("GTS_PDFA1 OutputIntent's /DestOutputProfile is missing or not a valid ICC profile".to_string()),
+        _ => errors.push(
+            "GTS_PDFA1 OutputIntent's /DestOutputProfile is missing or not a valid ICC profile"
+                .to_string(),
+        ),
     }
 }
 
@@ -263,7 +287,9 @@ fn check_fonts_embedded(doc: &Document, errors: &mut Vec<String>) {
 
 fn font_is_embedded(doc: &Document, font_dict: &Dictionary) -> bool {
     let descriptor = font_descriptor(doc, font_dict);
-    let Some(descriptor) = descriptor else { return false };
+    let Some(descriptor) = descriptor else {
+        return false;
+    };
     descriptor.has(b"FontFile") || descriptor.has(b"FontFile2") || descriptor.has(b"FontFile3")
 }
 

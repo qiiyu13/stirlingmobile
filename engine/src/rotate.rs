@@ -24,15 +24,19 @@ pub fn rotate_pdf(
     let page_ids: Vec<_> = doc.get_pages().into_values().collect();
     for page_id in page_ids {
         if let Ok(page_dict) = doc.get_object_mut(page_id).and_then(|o| o.as_dict_mut()) {
-            let existing = page_dict.get(b"Rotate").and_then(Object::as_i64).unwrap_or(0);
+            let existing = page_dict
+                .get(b"Rotate")
+                .and_then(Object::as_i64)
+                .unwrap_or(0);
             let new_rotation = (existing + angle_degrees as i64).rem_euclid(360);
             page_dict.set("Rotate", Object::Integer(new_rotation));
         }
     }
 
-    doc.save(&output_path).map_err(|e| EngineError::WriteFailed {
-        reason: e.to_string(),
-    })?;
+    doc.save(&output_path)
+        .map_err(|e| EngineError::WriteFailed {
+            reason: e.to_string(),
+        })?;
     Ok(())
 }
 
@@ -103,7 +107,10 @@ mod tests {
         let result = rotate_pdf(
             input.to_string_lossy().into_owned(),
             45,
-            temp_dir().join("rotate_test_output2.pdf").to_string_lossy().into_owned(),
+            temp_dir()
+                .join("rotate_test_output2.pdf")
+                .to_string_lossy()
+                .into_owned(),
         );
         assert!(result.is_err());
     }
