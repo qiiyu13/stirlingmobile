@@ -773,6 +773,14 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -835,6 +843,14 @@ internal interface UniffiLib : Library {
     fun uniffi_stirling_engine_fn_func_metadata_extract(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_ocr_apply_text_layer(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_pages_crop(`inputPath`: RustBuffer.ByValue,`x1`: Float,`y1`: Float,`x2`: Float,`y2`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_pages_n_up(`inputPath`: RustBuffer.ByValue,`n`: Int,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_pages_reorder(`inputPath`: RustBuffer.ByValue,`order`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_pages_scale(`inputPath`: RustBuffer.ByValue,`scaleX`: Float,`scaleY`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_remove_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1010,6 +1026,14 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_ocr_apply_text_layer(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_pages_crop(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_pages_n_up(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_pages_reorder(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_pages_scale(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_remove_pages(
     ): Short
     fun uniffi_stirling_engine_checksum_func_remove_password(
@@ -1111,6 +1135,18 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_ocr_apply_text_layer() != 54889.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_pages_crop() != 38033.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_pages_n_up() != 32770.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_pages_reorder() != 7768.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_pages_scale() != 65242.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_remove_pages() != 12487.toShort()) {
@@ -2344,6 +2380,62 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_ocr_apply_text_layer(
         FfiConverterString.lower(`inputPath`),FfiConverterSequenceTypeOcrPage.lower(`pages`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Apply a crop box (x1, y1, x2, y2 in PDF user-space coordinates) to every
+         * page in the PDF. Pages outside the crop box are hidden but not deleted.
+         */
+    @Throws(EngineException::class) fun `pagesCrop`(`inputPath`: kotlin.String, `x1`: kotlin.Float, `y1`: kotlin.Float, `x2`: kotlin.Float, `y2`: kotlin.Float, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_pages_crop(
+        FfiConverterString.lower(`inputPath`),FfiConverterFloat.lower(`x1`),FfiConverterFloat.lower(`y1`),FfiConverterFloat.lower(`x2`),FfiConverterFloat.lower(`y2`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Arrange `n` pages per sheet (2, 4, 6, or 9-up). Original pages are scaled
+         * down and positioned in a grid on new output pages. The output sheet keeps
+         * the original page size of the first page.
+         * # ponytail: only supports n in {2, 4, 6, 9}; creates Form XObjects from
+         * page content — doesn't preserve annotations or form fields.
+         */
+    @Throws(EngineException::class) fun `pagesNUp`(`inputPath`: kotlin.String, `n`: kotlin.UInt, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_pages_n_up(
+        FfiConverterString.lower(`inputPath`),FfiConverterUInt.lower(`n`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Reorder pages by the given 1-indexed page `order`. Must include every page
+         * exactly once (a permutation). Output has pages in the specified order.
+         */
+    @Throws(EngineException::class) fun `pagesReorder`(`inputPath`: kotlin.String, `order`: List<kotlin.UInt>, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_pages_reorder(
+        FfiConverterString.lower(`inputPath`),FfiConverterSequenceUInt.lower(`order`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Scale all pages by `scale_x` and `scale_y` (1.0 = unchanged). Updates
+         * /MediaBox and wraps page content with a scaling transform.
+         * # ponytail: scales content via cm transform, not actual raster resize.
+         */
+    @Throws(EngineException::class) fun `pagesScale`(`inputPath`: kotlin.String, `scaleX`: kotlin.Float, `scaleY`: kotlin.Float, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_pages_scale(
+        FfiConverterString.lower(`inputPath`),FfiConverterFloat.lower(`scaleX`),FfiConverterFloat.lower(`scaleY`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     

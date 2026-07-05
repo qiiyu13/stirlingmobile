@@ -35,7 +35,7 @@ pub use merge::{merge_pdfs, EngineError};
 pub use metadata::{metadata_edit, metadata_extract, PdfMetadata};
 pub use ocr::{ocr_apply_text_layer, OcrPage, OcrWord};
 pub use page_numbers::content_page_numbers;
-pub use pages::{extract_pages, remove_pages};
+pub use pages::{extract_pages, pages_crop, pages_n_up, pages_reorder, pages_scale, remove_pages};
 pub use pfx_generate::generate_self_signed_pfx;
 pub use rasterize::convert_pdf_to_images;
 pub use redact::{content_redact, RedactionArea};
