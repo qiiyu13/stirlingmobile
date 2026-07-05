@@ -787,6 +787,10 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -828,6 +832,8 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_convert_pdf_to_images(`inputPath`: RustBuffer.ByValue,`pdfiumLibDir`: RustBuffer.ByValue,`dpi`: Int,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_stirling_engine_fn_func_convert_pdf_to_pdfa(`inputPath`: RustBuffer.ByValue,`standard`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_stirling_engine_fn_func_describe_images(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_extract_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -860,6 +866,8 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_stirling_engine_fn_func_pages_scale(`inputPath`: RustBuffer.ByValue,`scaleX`: Float,`scaleY`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_stirling_engine_fn_func_pdfa_validate(`inputPath`: RustBuffer.ByValue,`standard`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_remove_pages(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_remove_password(`inputPath`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1016,6 +1024,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_convert_pdf_to_images(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_convert_pdf_to_pdfa(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_describe_images(
     ): Short
     fun uniffi_stirling_engine_checksum_func_extract_pages(
@@ -1047,6 +1057,8 @@ internal interface UniffiLib : Library {
     fun uniffi_stirling_engine_checksum_func_pages_reorder(
     ): Short
     fun uniffi_stirling_engine_checksum_func_pages_scale(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_pdfa_validate(
     ): Short
     fun uniffi_stirling_engine_checksum_func_remove_pages(
     ): Short
@@ -1122,6 +1134,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_stirling_engine_checksum_func_convert_pdf_to_images() != 33306.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_stirling_engine_checksum_func_convert_pdf_to_pdfa() != 4211.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_stirling_engine_checksum_func_describe_images() != 21719.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1168,6 +1183,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_pages_scale() != 65242.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_pdfa_validate() != 26016.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_remove_pages() != 12487.toShort()) {
@@ -1695,6 +1713,41 @@ public object FfiConverterTypePdfMetadata: FfiConverterRustBuffer<PdfMetadata> {
             FfiConverterOptionalString.write(value.`producer`, buf)
             FfiConverterOptionalString.write(value.`creationDate`, buf)
             FfiConverterOptionalString.write(value.`modDate`, buf)
+    }
+}
+
+
+
+/**
+ * Result of validating a PDF against a PDF/A standard.
+ */
+data class PdfaValidation (
+    var `valid`: kotlin.Boolean, 
+    var `errors`: List<kotlin.String>
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypePdfaValidation: FfiConverterRustBuffer<PdfaValidation> {
+    override fun read(buf: ByteBuffer): PdfaValidation {
+        return PdfaValidation(
+            FfiConverterBoolean.read(buf),
+            FfiConverterSequenceString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: PdfaValidation) = (
+            FfiConverterBoolean.allocationSize(value.`valid`) +
+            FfiConverterSequenceString.allocationSize(value.`errors`)
+    )
+
+    override fun write(value: PdfaValidation, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`valid`, buf)
+            FfiConverterSequenceString.write(value.`errors`, buf)
     }
 }
 
@@ -2329,6 +2382,23 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     
 
         /**
+         * Converts the PDF at `input_path` to PDF/A `standard` ("1b"/"2b"/"3b"),
+         * writing the result to `output_path`. Sets the PDF version, adds a
+         * `GTS_PDFA1` `OutputIntent` (sRGB ICC profile), and adds an XMP metadata
+         * stream declaring `pdfaid:part`/`pdfaid:conformance`. Does not embed fonts
+         * or otherwise rewrite content - run `pdfa_validate` after to confirm the
+         * source PDF didn't have other conformance gaps (e.g. non-embedded fonts).
+         */
+    @Throws(EngineException::class) fun `convertPdfToPdfa`(`inputPath`: kotlin.String, `standard`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_convert_pdf_to_pdfa(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`standard`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
          * Diagnostic: one summary line per image XObject in the PDF (filter,
          * color space, bit depth, dimensions, stored byte size). Used to explain
          * why `compress_pdf_by_level` did or didn't shrink a given file.
@@ -2544,6 +2614,21 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
         FfiConverterString.lower(`inputPath`),FfiConverterFloat.lower(`scaleX`),FfiConverterFloat.lower(`scaleY`),FfiConverterString.lower(`outputPath`),_status)
 }
     
+    
+
+        /**
+         * Validates the PDF at `input_path` against PDF/A `standard`
+         * ("1b"/"2b"/"3b"). Best-effort: checks encryption, PDF version,
+         * `OutputIntent`/ICC profile, XMP `pdfaid` metadata, and font embedding.
+         */
+    @Throws(EngineException::class) fun `pdfaValidate`(`inputPath`: kotlin.String, `standard`: kotlin.String): PdfaValidation {
+            return FfiConverterTypePdfaValidation.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_pdfa_validate(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`standard`),_status)
+}
+    )
+    }
     
 
         /**

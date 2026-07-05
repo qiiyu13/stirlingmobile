@@ -44,6 +44,7 @@ import com.stirlingmobile.ui.PagesToolMode
 import com.stirlingmobile.ui.PagesToolScreen
 import com.stirlingmobile.ui.PasswordToolMode
 import com.stirlingmobile.ui.PasswordToolScreen
+import com.stirlingmobile.ui.PdfaScreen
 import com.stirlingmobile.ui.PdfToImagesScreen
 import com.stirlingmobile.ui.RedactScreen
 import com.stirlingmobile.ui.ReorderScreen
@@ -55,7 +56,7 @@ import com.stirlingmobile.ui.SignatureStampScreen
 import com.stirlingmobile.ui.SplitScreen
 import com.stirlingmobile.ui.WatermarkScreen
 
-private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, OPTIMIZE, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT, WATERMARK, PAGE_NUMBERS, SANITIZE, METADATA, OCR, FORMS_FILL, FORMS_FLATTEN, FORMS_EXTRACT, REORDER, N_UP, CROP, SCALE, COMPARE, OVERLAY }
+private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, OPTIMIZE, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT, WATERMARK, PAGE_NUMBERS, SANITIZE, METADATA, OCR, FORMS_FILL, FORMS_FLATTEN, FORMS_EXTRACT, REORDER, N_UP, CROP, SCALE, COMPARE, OVERLAY, PDFA }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -112,6 +113,7 @@ private fun App() {
         Tool.SCALE -> ScaleScreen(pipeline = pipeline)
         Tool.COMPARE -> CompareScreen()
         Tool.OVERLAY -> OverlayScreen(pipeline = pipeline)
+        Tool.PDFA -> PdfaScreen(pipeline = pipeline)
     }
     }
 }
@@ -162,5 +164,6 @@ private fun HomeScreen(pipeline: PipelineState, onSelect: (Tool) -> Unit) {
         Button(onClick = { onSelect(Tool.SCALE) }) { Text("Scale Pages") }
         Button(onClick = { onSelect(Tool.COMPARE) }) { Text("Compare PDFs") }
         Button(onClick = { onSelect(Tool.OVERLAY) }) { Text("Overlay PDFs") }
+        Button(onClick = { onSelect(Tool.PDFA) }) { Text("Convert to PDF/A") }
     }
 }

@@ -82,7 +82,8 @@
 |---|---|
 | W19 | ✅ `pages_reorder`, `pages_n_up`, `pages_crop`, `pages_scale`, `tool_compare`, `tool_overlay` — Rust + screens (all 6 done, verified on x86_64 emulator) |
 | W19-20 | ✅ `optimize_lossless` via `libqpdf` NDK wrapper (ADR-003 Path A, decided upfront — no custom rewrite, no go/no-go checkpoint needed; qpdf+zlib+libjpeg cross-compiled for all 3 ABIs, verified on x86_64 emulator) |
-| W20 | Pipeline system: multi-tool chain, FileContext, undo — Kotlin. PDF/A conversion + validation — Rust. |
+| W20 | ✅ Pipeline system: FileContext + undo wired into all 22 applicable tool screens (multi-tool chain via auto-consume/push), Kotlin. |
+| W20 | ✅ PDF/A conversion + validation — Rust (`convert_pdf_to_pdfa`/`pdfa_validate`: OutputIntent + hand-built sRGB ICC profile, XMP `pdfaid` metadata, font-embedding check). |
 | W21 | Performance optimization: profiling, memory tuning, benchmark pass. **Human bottleneck**: judging whether a benchmark regression matters requires product judgment, not just code review. |
 | W21 | Accessibility audit: TalkBack pass on all screens. **Human bottleneck**: actually using a screen reader end-to-end, not something to delegate. |
 | W22 | i18n: strings extracted, 3-5 languages translated (not the full 40 — see 10-i18n.md; remainder is a v1.1 community-translation task) |
