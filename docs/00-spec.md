@@ -227,7 +227,7 @@ Each feature is considered complete when:
 4. **Accessibility**: Passes TalkBack navigation of the feature's UI
 5. **Offline**: Works with airplane mode enabled
 
-**Release gate: all 50 v1 tools (see 04-feature-catalog.md) must individually pass all five criteria above before Play Store submission.** Not a majority, not "the important ones" — 50/50. No phased or partial-tool-set release. This is a hard blocker on Phase 6 (11-roadmap.md) and on Pre-Submission Testing (16-playstore-checklist.md §5), not just a Phase 5 milestone label.
+**Release gate: all 57 v1 tools (see 04-feature-catalog.md) must individually pass all five criteria above before Play Store submission.** (Originally 50; 7 tools — "Track A", docs/17-track-a-native-tools-status.md — were pulled forward from v1.1 into v1 during W20.) Not a majority, not "the important ones" — 57/57. No phased or partial-tool-set release. This is a hard blocker on Phase 6 (11-roadmap.md) and on Pre-Submission Testing (16-playstore-checklist.md §5), not just a Phase 5 milestone label.
 
 ---
 

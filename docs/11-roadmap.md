@@ -84,12 +84,13 @@
 | W19-20 | ✅ `optimize_lossless` via `libqpdf` NDK wrapper (ADR-003 Path A, decided upfront — no custom rewrite, no go/no-go checkpoint needed; qpdf+zlib+libjpeg cross-compiled for all 3 ABIs, verified on x86_64 emulator) |
 | W20 | ✅ Pipeline system: FileContext + undo wired into all 22 applicable tool screens (multi-tool chain via auto-consume/push), Kotlin. |
 | W20 | ✅ PDF/A conversion + validation — Rust (`convert_pdf_to_pdfa`/`pdfa_validate`: OutputIntent + hand-built sRGB ICC profile, XMP `pdfaid` metadata, font-embedding check). |
+| W20 | ✅ 7 native tools pulled forward from v1.1 ("Track A" — PDF to XML/HTML, Add text, Draw on PDF, Annotations, Extract images, Remove duplicate pages), all native Rust/uniffi, no Collabora dependency. See docs/17-track-a-native-tools-status.md. |
 | W21 | Performance optimization: profiling, memory tuning, benchmark pass. **Human bottleneck**: judging whether a benchmark regression matters requires product judgment, not just code review. |
 | W21 | Accessibility audit: TalkBack pass on all screens. **Human bottleneck**: actually using a screen reader end-to-end, not something to delegate. |
 | W22 | i18n: strings extracted, 3-5 languages translated (not the full 40 — see 10-i18n.md; remainder is a v1.1 community-translation task) |
 | W22-23 | Play Store assets: screenshots, feature graphic, description, privacy policy, trademark/naming check (M4, 14-risk-register.md) |
 | W23 | Internal alpha, bug bash |
-| **Release gate (hard blocker, not just a milestone):** all 50 v1 tools individually pass every acceptance criterion in 00-spec.md §6. If any tool fails, Phase 6 does not start for the app as a whole — fix and re-verify that tool, don't ship around it. No partial/staged tool rollout for v1. |
+| **Release gate (hard blocker, not just a milestone):** all 57 v1 tools individually pass every acceptance criterion in 00-spec.md §6. If any tool fails, Phase 6 does not start for the app as a whole — fix and re-verify that tool, don't ship around it. No partial/staged tool rollout for v1. |
 
 ---
 
@@ -97,7 +98,7 @@
 
 **Goal:** Real users, real feedback — this phase is calendar-bound, not code-writing-bound. AI orchestration doesn't compress it: testers take real days to install, use, and report bugs.
 
-**Entry condition:** the Phase 5 release gate above is met — 50/50 tools passing. If it slips, Phase 6 slips with it; weeks below are not a fixed calendar commitment independent of that gate.
+**Entry condition:** the Phase 5 release gate above is met — 57/57 tools passing. If it slips, Phase 6 slips with it; weeks below are not a fixed calendar commitment independent of that gate.
 
 | Week | Deliverable |
 |---|---|
@@ -110,13 +111,7 @@
 ## Post-Launch Roadmap
 
 ### v1.1 (Months 6-8 post-launch-start)
-- Collabora Office SDK integration: Office↔PDF (7 tools) — the biggest deferred chunk. Budget 6-8 weeks: AI compresses the integration glue, but the SDK-bug-hunting risk (R2) is unchanged by AI orchestration — that's still on-device native debugging, same as Phase 4's Tesseract bottleneck
-- PDF to XML, PDF to HTML conversion
-- Add text to PDF (positioned)
-- Draw on PDF (freehand, shapes)
-- Annotation tools (highlight, underline, strikethrough, note)
-- Extract images from PDF
-- Remove duplicate pages
+- Collabora Office SDK integration: Office↔PDF (7 tools) — the only tools remaining in v1.1 scope (the other 7 originally listed here — PDF to XML/HTML, Add text, Draw on PDF, Annotations, Extract images, Remove duplicate pages — were pulled forward into v1 during W20, see 04-feature-catalog.md and docs/17-track-a-native-tools-status.md). Budget 6-8 weeks: AI compresses the integration glue, but the SDK-bug-hunting risk (R2) is unchanged by AI orchestration — that's still on-device native debugging, same as Phase 4's Tesseract bottleneck
 
 ### v1.2
 - Download additional OCR languages on demand (mechanism already built in v1; this adds the language picker + remaining `traineddata` packs)

@@ -50,10 +50,10 @@
 | 23 | Markdown to PDF | `/api/v1/convert/md-to-pdf` | ✅ `convert_markdown_to_pdf` | Convert |
 | 24 | PDF to Text | `/api/v1/convert/pdf-to-text` | ✅ `pdf_extract_text` | View |
 | 25 | PDF to CSV | `/api/v1/convert/pdf-to-csv` | ✅ `convert_pdf_to_csv` | Convert |
-| 26 | PDF to XML | `/api/v1/convert/pdf-to-xml` | ⏳ | Convert |
+| 26 | PDF to XML | `/api/v1/convert/pdf-to-xml` | ✅ `convertPdfToXml` | Convert |
 | 27 | PDF to PDF/A | `/api/v1/misc/pdf-to-pdfa` | ✅ `convert_pdf_to_pdfa` | Convert |
 | 28 | PDF/A Validation | `/api/v1/misc/validate-pdfa` | ✅ `convert_pdfa_validate` | Convert |
-| 29 | PDF to Single HTML | `/api/v1/convert/pdf-to-html` | ⏳ | Convert |
+| 29 | PDF to Single HTML | `/api/v1/convert/pdf-to-html` | ✅ `convertPdfToHtml` | Convert |
 | 30 | File to PDF (generic) | `/api/v1/convert/file-to-pdf` | 🤝 Collabora | Office (v1.1) |
 
 ## 3. Security
@@ -77,9 +77,9 @@
 | 40 | Add Watermark (Image) | `/api/v1/misc/add-image-watermark` | ✅ `content_watermark_image` | ContentOps |
 | 41 | Add Page Numbers | `/api/v1/misc/add-page-numbers` | ✅ `content_page_numbers` | ContentOps |
 | 42 | Add Image/Stamp | `/api/v1/misc/add-image` | ✅ `content_add_image` | ContentOps |
-| 43 | Add Text | `/api/v1/misc/add-text` | ⏳ | ContentOps |
-| 44 | Draw on PDF | — | ⏳ | ContentOps |
-| 45 | Annotations | — | ⏳ | ContentOps |
+| 43 | Add Text | `/api/v1/misc/add-text` | ✅ `contentAddText` | ContentOps |
+| 44 | Draw on PDF | — | ✅ `contentDraw` | ContentOps |
+| 45 | Annotations | — | ✅ `contentAddAnnotation` | ContentOps |
 
 ## 5. OCR
 
@@ -108,7 +108,7 @@ v1 (solo): English-language pack bundled only. Additional languages (of the 40+ 
 v1 (solo): implemented as a thin Rust wrapper over `libqpdf` compiled for NDK (ADR-003 Path A), decided upfront rather than attempting a custom stream optimizer first. Cuts the R3 rewrite-risk and the Week-22 go/no-go checkpoint out of the plan entirely — see 11-roadmap.md.
 | 53 | Remove Blank Pages | — | ✅ `pages_remove_blank` | PageOps |
 | 54 | Detect Blank Pages | — | ✅ `pages_detect_blank` | PageOps |
-| 55 | Remove Duplicates | — | ⏳ | PageOps |
+| 55 | Remove Duplicates | — | ✅ `pagesDetectDuplicates`/`pagesRemoveDuplicates` | PageOps |
 
 ## 8. Metadata & Info
 
@@ -117,7 +117,7 @@ v1 (solo): implemented as a thin Rust wrapper over `libqpdf` compiled for NDK (A
 | 56 | Get Info | `/api/v1/misc/get-info` | ✅ `pdf_get_info` | View |
 | 57 | Edit Metadata | `/api/v1/misc/update-metadata` | ✅ `metadata_edit` | Metadata |
 | 58 | Auto Rename | `/api/v1/misc/auto-rename` | ✅ `tool_auto_rename` | Metadata |
-| 59 | Extract Images | `/api/v1/misc/extract-images` | ⏳ | Convert |
+| 59 | Extract Images | `/api/v1/misc/extract-images` | ✅ `extractImages` | Convert |
 
 ## 9. Compare & Overlay
 
@@ -140,23 +140,15 @@ v1 (solo): implemented as a thin Rust wrapper over `libqpdf` compiled for NDK (A
 
 | Status | Count |
 |---|---|
-| ✅ Rust engine — ships v1 | 46 |
+| ✅ Rust engine — ships v1 | 53 |
 | 📱 Kotlin / Android API — ships v1 | 4 |
 | 🤝 Collabora Office SDK — deferred v1.1 | 7 |
-| ⏳ Planned, not started — deferred v1.1 | 7 |
 
 Total: 64 rows in this catalog (including sub-variants that split one Stirling server endpoint into several mobile-side tools; the Stirling server itself has ~55 distinct endpoints, not directly comparable 1:1 to this count).
 
-**v1 (solo) coverage: 50/64 (78%)** — ✅46 + 📱4. Collabora (Office↔PDF) is cut from v1 entirely; it's a multi-week LibreOffice-on-Android integration that doesn't pay for itself on a solo timeline. See P2/R2/M4 in 14-risk-register.md and 11-roadmap.md.
+**v1 (solo) coverage: 57/64 (89%)** — ✅53 + 📱4. Collabora (Office↔PDF) is cut from v1 entirely; it's a multi-week LibreOffice-on-Android integration that doesn't pay for itself on a solo timeline. See P2/R2/M4 in 14-risk-register.md and 11-roadmap.md. The other 7 tools originally deferred to v1.1 (PDF to XML/HTML, Add text, Draw on PDF, Annotations, Extract images, Remove duplicates — "Track A", see docs/17-track-a-native-tools-status.md) were pulled forward into v1 during W20, all native Rust/uniffi, no Collabora dependency.
 
-14 tools deferred to v1.1:
-- PDF to Word / Excel / PPTX (Collabora)
-- Word / Excel / PPTX to PDF (Collabora)
-- File to PDF, generic (Collabora)
-- PDF to XML
-- PDF to HTML
-- Add text (positioned)
-- Draw on PDF
-- Annotation tools (highlight, underline, strikethrough, note)
-- Extract images from PDF
-- Remove duplicate pages
+7 tools deferred to v1.1 (all Collabora, see R2/14-risk-register.md):
+- PDF to Word / Excel / PPTX
+- Word / Excel / PPTX to PDF
+- File to PDF, generic

@@ -179,11 +179,11 @@ android {
 
 ## 5. Pre-Submission Testing
 
-**Hard gate before anything else in this section:** all 50 v1 tools (04-feature-catalog.md) pass every acceptance criterion in 00-spec.md §6. Verify this first — the checks below don't matter if a tool is still broken.
+**Hard gate before anything else in this section:** all 57 v1 tools (04-feature-catalog.md) pass every acceptance criterion in 00-spec.md §6. Verify this first — the checks below don't matter if a tool is still broken.
 
 | Test | Status |
 |---|---|
-| All 50/50 v1 tools pass 00-spec.md §6 acceptance criteria | ⏳ |
+| All 57/57 v1 tools pass 00-spec.md §6 acceptance criteria | ⏳ |
 | App runs on API 26 device | ⏳ |
 | App runs on API 34 device | ⏳ |
 | App handles process death gracefully | ⏳ |
