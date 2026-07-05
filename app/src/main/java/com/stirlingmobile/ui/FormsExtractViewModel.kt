@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import uniffi.stirling_engine.FormField
 import uniffi.stirling_engine.formsGetFields
 import java.io.File
@@ -72,16 +73,29 @@ class FormsExtractViewModel : ViewModel() {
     private fun fieldValue(f: FormField): String = f.value ?: ""
 
     private fun buildJson(fields: List<FormField>): String {
-        val entries = fields.joinToString(",\n  ") { f ->
-            "\"${f.name}\": {\"type\": \"${f.fieldType}\", \"value\": \"${fieldValue(f)}\", \"page\": ${f.page}}"
+        val root = JSONObject()
+        fields.forEach { f ->
+            val entry = JSONObject()
+            entry.put("type", f.fieldType)
+            entry.put("value", fieldValue(f))
+            entry.put("page", f.page)
+            root.put(f.name, entry)
         }
-        return "{\n  $entries\n}"
+        return root.toString(2)
     }
+
+    private fun csvField(value: String): String =
+        if (value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
+            "\"${value.replace("\"", "\"\"")}\""
+        } else {
+            value
+        }
 
     private fun buildCsv(fields: List<FormField>): String {
         val header = "Name,Type,Value,Page"
         val rows = fields.joinToString("\n") { f ->
-            "${f.name},${f.fieldType},${fieldValue(f)},${f.page}"
+            listOf(f.name, f.fieldType, fieldValue(f), f.page.toString())
+                .joinToString(",") { csvField(it) }
         }
         return "$header\n$rows"
     }
