@@ -2,6 +2,7 @@
 app/build/
 build/
 engine/target/
+engine/native/libc_n.version
 local.properties
 *.iml
 .idea/

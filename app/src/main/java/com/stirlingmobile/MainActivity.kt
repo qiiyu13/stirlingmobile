@@ -34,6 +34,7 @@ import com.stirlingmobile.ui.MergeScreen
 import com.stirlingmobile.ui.MetadataScreen
 import com.stirlingmobile.ui.NUpScreen
 import com.stirlingmobile.ui.OcrScreen
+import com.stirlingmobile.ui.OptimizeScreen
 import com.stirlingmobile.ui.OverlayScreen
 import com.stirlingmobile.ui.PageNumbersScreen
 import com.stirlingmobile.ui.PagesToolMode
@@ -51,7 +52,7 @@ import com.stirlingmobile.ui.SignatureStampScreen
 import com.stirlingmobile.ui.SplitScreen
 import com.stirlingmobile.ui.WatermarkScreen
 
-private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT, WATERMARK, PAGE_NUMBERS, SANITIZE, METADATA, OCR, FORMS_FILL, FORMS_FLATTEN, FORMS_EXTRACT, REORDER, N_UP, CROP, SCALE, COMPARE, OVERLAY }
+private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, OPTIMIZE, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT, WATERMARK, PAGE_NUMBERS, SANITIZE, METADATA, OCR, FORMS_FILL, FORMS_FLATTEN, FORMS_EXTRACT, REORDER, N_UP, CROP, SCALE, COMPARE, OVERLAY }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,6 +78,7 @@ private fun App() {
         Tool.REMOVE -> PagesToolScreen(PagesToolMode.REMOVE)
         Tool.EXTRACT -> PagesToolScreen(PagesToolMode.EXTRACT)
         Tool.COMPRESS -> CompressScreen()
+        Tool.OPTIMIZE -> OptimizeScreen()
         Tool.ADD_PASSWORD -> PasswordToolScreen(PasswordToolMode.ADD)
         Tool.REMOVE_PASSWORD -> PasswordToolScreen(PasswordToolMode.REMOVE)
         Tool.IMAGES_TO_PDF -> ImagesToPdfScreen()
@@ -118,6 +120,7 @@ private fun HomeScreen(onSelect: (Tool) -> Unit) {
         Button(onClick = { onSelect(Tool.REMOVE) }) { Text("Remove Pages") }
         Button(onClick = { onSelect(Tool.EXTRACT) }) { Text("Extract Pages") }
         Button(onClick = { onSelect(Tool.COMPRESS) }) { Text("Compress") }
+        Button(onClick = { onSelect(Tool.OPTIMIZE) }) { Text("Optimize (lossless)") }
         Button(onClick = { onSelect(Tool.ADD_PASSWORD) }) { Text("Add Password") }
         Button(onClick = { onSelect(Tool.REMOVE_PASSWORD) }) { Text("Remove Password") }
         Button(onClick = { onSelect(Tool.IMAGES_TO_PDF) }) { Text("Images to PDF") }

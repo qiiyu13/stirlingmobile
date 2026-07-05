@@ -785,6 +785,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -847,6 +849,8 @@ internal interface UniffiLib : Library {
     fun uniffi_stirling_engine_fn_func_metadata_extract(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_ocr_apply_text_layer(`inputPath`: RustBuffer.ByValue,`pages`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_optimize_lossless(`inputPath`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_stirling_engine_fn_func_pages_crop(`inputPath`: RustBuffer.ByValue,`x1`: Float,`y1`: Float,`x2`: Float,`y2`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1034,6 +1038,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_ocr_apply_text_layer(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_optimize_lossless(
+    ): Short
     fun uniffi_stirling_engine_checksum_func_pages_crop(
     ): Short
     fun uniffi_stirling_engine_checksum_func_pages_n_up(
@@ -1147,6 +1153,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_ocr_apply_text_layer() != 54889.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_optimize_lossless() != 51028.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_pages_crop() != 38033.toShort()) {
@@ -2462,6 +2471,21 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_ocr_apply_text_layer(
         FfiConverterString.lower(`inputPath`),FfiConverterSequenceTypeOcrPage.lower(`pages`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Losslessly optimizes the PDF at `input_path` (object stream generation +
+         * linearization, matching Stirling server's qpdf-based optimize) and writes
+         * the result to `output_path`. No image recompression — see `compress.rs`
+         * for that.
+         */
+    @Throws(EngineException::class) fun `optimizeLossless`(`inputPath`: kotlin.String, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_optimize_lossless(
+        FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     
