@@ -781,6 +781,10 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -865,6 +869,10 @@ internal interface UniffiLib : Library {
     fun uniffi_stirling_engine_fn_func_split_pdf(`inputPath`: RustBuffer.ByValue,`splitAfterPages`: RustBuffer.ByValue,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_stirling_engine_fn_func_stamp_signature_image(`inputPath`: RustBuffer.ByValue,`imagePath`: RustBuffer.ByValue,`pageNumber`: Int,`position`: RustBuffer.ByValue,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_stirling_engine_fn_func_tool_compare(`inputPathA`: RustBuffer.ByValue,`inputPathB`: RustBuffer.ByValue,`pdfiumLibDir`: RustBuffer.ByValue,`dpi`: Int,`outputDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_stirling_engine_fn_func_tool_overlay(`basePath`: RustBuffer.ByValue,`overlayPath`: RustBuffer.ByValue,`opacity`: Float,`outputPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun ffi_stirling_engine_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1048,6 +1056,10 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_stirling_engine_checksum_func_stamp_signature_image(
     ): Short
+    fun uniffi_stirling_engine_checksum_func_tool_compare(
+    ): Short
+    fun uniffi_stirling_engine_checksum_func_tool_overlay(
+    ): Short
     fun ffi_stirling_engine_uniffi_contract_version(
     ): Int
     
@@ -1168,6 +1180,12 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_stirling_engine_checksum_func_stamp_signature_image() != 25805.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_tool_compare() != 7376.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_stirling_engine_checksum_func_tool_overlay() != 20345.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -1573,6 +1591,42 @@ public object FfiConverterTypeOcrWord: FfiConverterRustBuffer<OcrWord> {
             FfiConverterFloat.write(value.`y`, buf)
             FfiConverterFloat.write(value.`width`, buf)
             FfiConverterFloat.write(value.`height`, buf)
+    }
+}
+
+
+
+data class PageComparison (
+    var `page`: kotlin.UInt, 
+    var `identical`: kotlin.Boolean, 
+    var `diffImagePath`: kotlin.String?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypePageComparison: FfiConverterRustBuffer<PageComparison> {
+    override fun read(buf: ByteBuffer): PageComparison {
+        return PageComparison(
+            FfiConverterUInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: PageComparison) = (
+            FfiConverterUInt.allocationSize(value.`page`) +
+            FfiConverterBoolean.allocationSize(value.`identical`) +
+            FfiConverterOptionalString.allocationSize(value.`diffImagePath`)
+    )
+
+    override fun write(value: PageComparison, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`page`, buf)
+            FfiConverterBoolean.write(value.`identical`, buf)
+            FfiConverterOptionalString.write(value.`diffImagePath`, buf)
     }
 }
 
@@ -1994,6 +2048,34 @@ public object FfiConverterSequenceTypeOcrWord: FfiConverterRustBuffer<List<OcrWo
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeOcrWord.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypePageComparison: FfiConverterRustBuffer<List<PageComparison>> {
+    override fun read(buf: ByteBuffer): List<PageComparison> {
+        val len = buf.getInt()
+        return List<PageComparison>(len) {
+            FfiConverterTypePageComparison.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<PageComparison>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypePageComparison.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<PageComparison>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypePageComparison.write(it, buf)
         }
     }
 }
@@ -2539,6 +2621,38 @@ public object FfiConverterSequenceTypeRedactionArea: FfiConverterRustBuffer<List
     uniffiRustCallWithError(EngineException) { _status ->
     UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_stamp_signature_image(
         FfiConverterString.lower(`inputPath`),FfiConverterString.lower(`imagePath`),FfiConverterUInt.lower(`pageNumber`),FfiConverterString.lower(`position`),FfiConverterString.lower(`outputPath`),_status)
+}
+    
+    
+
+        /**
+         * Compares `input_path_a` and `input_path_b` page-by-page. Returns one
+         * [`PageComparison`] per page (using the longer document's page count); a
+         * page present in only one document is reported as non-identical with no
+         * diff image.
+         * # ponytail: whole-page pixel diff at fixed dpi, not a structural/text
+         * diff — good enough to flag "these pages differ" and show roughly where.
+         */
+    @Throws(EngineException::class) fun `toolCompare`(`inputPathA`: kotlin.String, `inputPathB`: kotlin.String, `pdfiumLibDir`: kotlin.String, `dpi`: kotlin.UInt, `outputDir`: kotlin.String): List<PageComparison> {
+            return FfiConverterSequenceTypePageComparison.lift(
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_tool_compare(
+        FfiConverterString.lower(`inputPathA`),FfiConverterString.lower(`inputPathB`),FfiConverterString.lower(`pdfiumLibDir`),FfiConverterUInt.lower(`dpi`),FfiConverterString.lower(`outputDir`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Draws every page of `overlay_path` onto the corresponding page of
+         * `base_path` (by index, repeating the overlay's last page if the base has
+         * more pages) at `opacity` (0..=1), writing the result to `output_path`.
+         */
+    @Throws(EngineException::class) fun `toolOverlay`(`basePath`: kotlin.String, `overlayPath`: kotlin.String, `opacity`: kotlin.Float, `outputPath`: kotlin.String)
+        = 
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.INSTANCE.uniffi_stirling_engine_fn_func_tool_overlay(
+        FfiConverterString.lower(`basePath`),FfiConverterString.lower(`overlayPath`),FfiConverterFloat.lower(`opacity`),FfiConverterString.lower(`outputPath`),_status)
 }
     
     

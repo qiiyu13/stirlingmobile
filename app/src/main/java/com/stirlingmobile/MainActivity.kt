@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.stirlingmobile.ui.AutoRedactScreen
+import com.stirlingmobile.ui.CompareScreen
 import com.stirlingmobile.ui.CompressScreen
 import com.stirlingmobile.ui.CropScreen
 import com.stirlingmobile.ui.FormsExtractScreen
@@ -33,6 +34,7 @@ import com.stirlingmobile.ui.MergeScreen
 import com.stirlingmobile.ui.MetadataScreen
 import com.stirlingmobile.ui.NUpScreen
 import com.stirlingmobile.ui.OcrScreen
+import com.stirlingmobile.ui.OverlayScreen
 import com.stirlingmobile.ui.PageNumbersScreen
 import com.stirlingmobile.ui.PagesToolMode
 import com.stirlingmobile.ui.PagesToolScreen
@@ -49,7 +51,7 @@ import com.stirlingmobile.ui.SignatureStampScreen
 import com.stirlingmobile.ui.SplitScreen
 import com.stirlingmobile.ui.WatermarkScreen
 
-private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT, WATERMARK, PAGE_NUMBERS, SANITIZE, METADATA, OCR, FORMS_FILL, FORMS_FLATTEN, FORMS_EXTRACT, REORDER, N_UP, CROP, SCALE }
+private enum class Tool { HOME, MERGE, SPLIT, ROTATE, REMOVE, EXTRACT, COMPRESS, ADD_PASSWORD, REMOVE_PASSWORD, IMAGES_TO_PDF, PDF_TO_IMAGES, HTML_TO_PDF, MARKDOWN_TO_PDF, SIGNATURE_STAMP, SIGN_PDF, GENERATE_CERTIFICATE, REDACT, AUTO_REDACT, WATERMARK, PAGE_NUMBERS, SANITIZE, METADATA, OCR, FORMS_FILL, FORMS_FLATTEN, FORMS_EXTRACT, REORDER, N_UP, CROP, SCALE, COMPARE, OVERLAY }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,6 +100,8 @@ private fun App() {
         Tool.N_UP -> NUpScreen()
         Tool.CROP -> CropScreen()
         Tool.SCALE -> ScaleScreen()
+        Tool.COMPARE -> CompareScreen()
+        Tool.OVERLAY -> OverlayScreen()
     }
 }
 
@@ -137,5 +141,7 @@ private fun HomeScreen(onSelect: (Tool) -> Unit) {
         Button(onClick = { onSelect(Tool.N_UP) }) { Text("N-Up Layout") }
         Button(onClick = { onSelect(Tool.CROP) }) { Text("Crop Pages") }
         Button(onClick = { onSelect(Tool.SCALE) }) { Text("Scale Pages") }
+        Button(onClick = { onSelect(Tool.COMPARE) }) { Text("Compare PDFs") }
+        Button(onClick = { onSelect(Tool.OVERLAY) }) { Text("Overlay PDFs") }
     }
 }
