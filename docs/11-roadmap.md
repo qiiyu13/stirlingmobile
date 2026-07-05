@@ -80,7 +80,7 @@
 
 | Week | Deliverable |
 |---|---|
-| W19 | `pages_reorder`, `pages_n_up`, `pages_crop`, `pages_scale`, `tool_compare`, `tool_overlay` — Rust + screens |
+| W19 | ✅ `pages_reorder`, `pages_n_up`, `pages_crop`, `pages_scale`, `tool_compare`, `tool_overlay` — Rust + screens (all 6 done, verified on x86_64 emulator) |
 | W19-20 | `optimize_lossless` via `libqpdf` NDK wrapper (ADR-003 Path A, decided upfront — no custom rewrite, no go/no-go checkpoint needed) |
 | W20 | Pipeline system: multi-tool chain, FileContext, undo — Kotlin. PDF/A conversion + validation — Rust. |
 | W21 | Performance optimization: profiling, memory tuning, benchmark pass. **Human bottleneck**: judging whether a benchmark regression matters requires product judgment, not just code review. |
