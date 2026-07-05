@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::rasterize::bind_pdfium;
 use crate::redact::{apply_redactions, load, save, RedactionArea};
 use crate::EngineError;
@@ -191,7 +192,7 @@ mod tests {
         );
         let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     /// Same limitation as rasterize.rs's tests: no host-platform libpdfium

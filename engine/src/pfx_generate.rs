@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::EngineError;
 use rsa::pkcs8::EncodePrivateKey;
 use rsa::RsaPrivateKey;
@@ -100,7 +101,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     /// End-to-end: generate a PFX with our own tool, then feed it straight

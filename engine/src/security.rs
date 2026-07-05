@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::EngineError;
 use aes::Aes128;
 use cbc::cipher::block_padding::Pkcs7;
@@ -95,7 +96,7 @@ pub fn add_password(
     let encrypt_id = doc.add_object(Object::Dictionary(encrypt_dict));
     doc.trailer.set("Encrypt", Object::Reference(encrypt_id));
 
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -118,7 +119,7 @@ pub fn remove_password(
     })?;
 
     if !doc.is_encrypted() {
-        doc.save(&output_path)
+        save_document(&mut doc, &output_path)
             .map_err(|e| EngineError::WriteFailed {
                 reason: e.to_string(),
             })?;
@@ -188,7 +189,7 @@ pub fn remove_password(
 
     doc.trailer.remove(b"Encrypt");
     doc.trailer.remove(b"ID");
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -410,7 +411,7 @@ mod tests {
             string_id,
             Object::String(text.as_bytes().to_vec(), StringFormat::Literal),
         );
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

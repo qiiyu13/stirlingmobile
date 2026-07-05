@@ -6,6 +6,7 @@
 //! JavaScript & embedded files, `/OpenAction`, `/AA`, `/AF`, Link annots). It
 //! does not chase JavaScript buried in arbitrary indirect action chains; add a
 //! full object-graph sweep if a threat model needs it.
+use crate::content_util::save_document;
 
 use crate::EngineError;
 use lopdf::{Document, Object, ObjectId};
@@ -78,7 +79,7 @@ pub fn security_sanitize(
         strip_link_annotations(&mut doc);
     }
 
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -158,7 +159,7 @@ mod tests {
         doc.trailer.set("Root", Object::Reference(catalog_id));
         let info_id = doc.add_object(dictionary! { "Author" => Object::string_literal("Bob") });
         doc.trailer.set("Info", Object::Reference(info_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

@@ -4,6 +4,7 @@
 //! ponytail: edits the classic `/Info` dict only. A file may also carry XMP
 //! metadata (Catalog `/Metadata` stream) that some viewers prefer; syncing or
 //! stripping XMP is a `security_sanitize` / v1.1 concern, not handled here.
+use crate::content_util::save_document;
 
 use crate::EngineError;
 use lopdf::{Dictionary, Document, Object, StringFormat};
@@ -105,7 +106,7 @@ pub fn metadata_edit(
         }
     }
 
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -175,7 +176,7 @@ mod tests {
             });
             doc.trailer.set("Info", Object::Reference(info_id));
         }
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::EngineError;
 use lopdf::{dictionary, Document, Object, ObjectId, Stream};
 use std::collections::{BTreeMap, HashMap};
@@ -251,7 +252,7 @@ pub fn forms_fill(
     fill_recursive(&mut doc, &fields, &value_map);
 
     doc.compress();
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -465,7 +466,7 @@ pub fn forms_flatten(path: String, output_path: String) -> Result<(), EngineErro
     }
 
     doc.compress();
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -640,7 +641,7 @@ mod tests {
             );
         }
 
-        doc.save(&input).unwrap();
+        save_document(&mut doc, &input).unwrap();
 
         forms_flatten(
             input.to_string_lossy().into_owned(),

@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::cms_sign::build_detached_signature;
 use crate::pfx::load_pfx;
 use crate::EngineError;
@@ -468,7 +469,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     /// Independent oracle: verifies with poppler's `pdfsig`, not our own

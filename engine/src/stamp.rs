@@ -1,4 +1,4 @@
-use crate::content_util::page_size;
+use crate::content_util::{page_size, save_document};
 use crate::EngineError;
 use image::GenericImageView;
 use lopdf::{dictionary, Document, Object, Stream};
@@ -85,7 +85,7 @@ pub fn stamp_signature_image(
         })?;
 
     doc.compress();
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -135,7 +135,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     fn write_png_rgba(path: &std::path::Path, width: u32, height: u32) {

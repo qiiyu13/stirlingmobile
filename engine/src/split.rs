@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::EngineError;
 use lopdf::Document;
 use std::path::Path;
@@ -38,7 +39,7 @@ pub fn split_pdf(
             .join(format!("part_{}.pdf", index + 1))
             .to_string_lossy()
             .into_owned();
-        part.save(&output_path)
+        save_document(&mut part, &output_path)
             .map_err(|e| EngineError::WriteFailed {
                 reason: e.to_string(),
             })?;

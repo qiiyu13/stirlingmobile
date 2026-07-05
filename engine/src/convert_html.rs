@@ -1,4 +1,5 @@
 //! Convert a PDF to a single HTML file (text per page, no layout fidelity).
+use crate::content_util::save_document;
 
 use crate::EngineError;
 use lopdf::Document;
@@ -93,7 +94,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

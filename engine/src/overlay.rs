@@ -2,7 +2,7 @@
 //! is drawn on top of the matching `base_path` page (repeating the overlay's
 //! last page if the base has more pages), scaled to fit and centered.
 
-use crate::content_util::{add_image_xobject, add_opacity_gs, page_size};
+use crate::content_util::{add_image_xobject, add_opacity_gs, page_size, save_document};
 use crate::EngineError;
 use lopdf::content::{Content, Operation};
 use lopdf::{dictionary, Document, Object, ObjectId, Stream};
@@ -87,11 +87,9 @@ pub fn tool_overlay(
     }
 
     base_doc.compress();
-    base_doc
-        .save(&output_path)
-        .map_err(|e| EngineError::WriteFailed {
-            reason: e.to_string(),
-        })?;
+    save_document(&mut base_doc, &output_path).map_err(|e| EngineError::WriteFailed {
+        reason: e.to_string(),
+    })?;
     Ok(())
 }
 
@@ -151,7 +149,7 @@ mod tests {
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
         doc.max_id = doc.objects.len() as u32;
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]
@@ -191,7 +189,7 @@ mod tests {
         let mut doc = Document::with_version("1.7");
         let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog" });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(&overlay).unwrap();
+        save_document(&mut doc, &overlay).unwrap();
 
         let result = tool_overlay(
             base.to_string_lossy().into_owned(),

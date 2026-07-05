@@ -7,6 +7,7 @@
 //! embed a font that isn't already embedded) - `convert_pdf_to_pdfa` only
 //! adds what's structurally missing; `pdfa_validate` reports the rest as
 //! errors so the user knows the source PDF needs fixing first.
+use crate::content_util::save_document;
 
 use crate::icc_srgb::srgb_icc_profile;
 use crate::EngineError;
@@ -112,7 +113,7 @@ pub fn convert_pdf_to_pdfa(
     catalog.set("Metadata", Object::Reference(metadata_id));
 
     doc.compress();
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -376,7 +377,7 @@ mod tests {
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
         doc.max_id = doc.objects.len() as u32;
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

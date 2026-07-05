@@ -29,14 +29,13 @@ pub fn merge_pdfs(input_paths: Vec<String>, output_path: String) -> Result<(), E
         documents.push(doc);
     }
 
-    let merged = merge_documents(documents);
+    let mut merged = merge_documents(documents);
 
-    let mut merged = merged;
-    merged
-        .save(&output_path)
-        .map_err(|e| EngineError::WriteFailed {
+    crate::content_util::save_document(&mut merged, &output_path).map_err(|e| {
+        EngineError::WriteFailed {
             reason: e.to_string(),
-        })?;
+        }
+    })?;
     Ok(())
 }
 

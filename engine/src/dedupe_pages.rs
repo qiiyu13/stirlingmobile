@@ -5,6 +5,7 @@
 //! merge/scan) but not visually-identical pages built from different content
 //! streams. Upgrade path: hash a pdfium rasterization instead if that proves
 //! too narrow in practice (see `compare.rs` for the rasterize primitive).
+use crate::content_util::save_document;
 
 use crate::EngineError;
 use lopdf::Document;
@@ -20,7 +21,7 @@ fn load(input_path: &str) -> Result<Document, EngineError> {
 fn save(mut doc: Document, output_path: &str) -> Result<(), EngineError> {
     doc.prune_objects();
     doc.renumber_objects();
-    doc.save(output_path)
+    save_document(&mut doc, output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -113,7 +114,7 @@ mod tests {
         let input = dir.join("dedupe_test_input.pdf");
         let output = dir.join("dedupe_test_output.pdf");
         let mut doc = doc_with_pages(&["A", "B", "A", "C", "B"]);
-        doc.save(&input).unwrap();
+        save_document(&mut doc, &input).unwrap();
 
         let duplicates = pages_detect_duplicates(input.to_string_lossy().into_owned()).unwrap();
         assert_eq!(duplicates, vec![3, 5]);

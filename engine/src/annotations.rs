@@ -1,4 +1,5 @@
 //! Markup annotations: highlight, underline, strikeout, and text notes.
+use crate::content_util::save_document;
 
 use crate::EngineError;
 use lopdf::{dictionary, Document, Object};
@@ -11,10 +12,9 @@ fn load(input_path: &str) -> Result<Document, EngineError> {
 }
 
 fn save(doc: &mut Document, output_path: &str) -> Result<(), EngineError> {
-    doc.save(output_path)
-        .map_err(|e| EngineError::WriteFailed {
-            reason: e.to_string(),
-        })?;
+    save_document(doc, output_path).map_err(|e| EngineError::WriteFailed {
+        reason: e.to_string(),
+    })?;
     Ok(())
 }
 
@@ -139,7 +139,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

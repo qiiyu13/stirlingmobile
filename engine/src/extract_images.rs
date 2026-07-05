@@ -6,6 +6,7 @@
 //! color spaces (indexed, CMYK, ICC-based) are skipped rather than guessing
 //! at a conversion. Upgrade path: add a colorspace-aware decoder if a v1.1
 //! testing pass finds real-world PDFs hitting the skip case often.
+use crate::content_util::save_document;
 
 use crate::EngineError;
 use image::{ImageBuffer, Luma, Rgb};
@@ -200,7 +201,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(&input).unwrap();
+        save_document(&mut doc, &input).unwrap();
 
         let paths = extract_images(
             input.to_string_lossy().into_owned(),

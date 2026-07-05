@@ -4,6 +4,22 @@
 //! page inherits from its `/Pages` ancestors.
 
 use lopdf::{dictionary, Dictionary, Document, Object, ObjectId, Stream};
+use std::path::Path;
+
+/// Save `doc` to `path`, working around a lopdf 0.34 bug: `Document::save`
+/// writes a single flattened xref table but never clears a pre-existing
+/// `trailer["Prev"]`/`trailer["XRefStm"]` carried over from the source file's
+/// incremental-update chain (common in linearized PDFs, e.g. img2pdf output).
+/// That stale offset no longer points at anything in the freshly written,
+/// differently-sized file, corrupting it for any reader that follows `Prev`
+/// (lopdf itself included). Every tool must save through this helper instead
+/// of calling `doc.save()` directly.
+pub(crate) fn save_document(doc: &mut Document, path: impl AsRef<Path>) -> lopdf::Result<()> {
+    doc.trailer.remove(b"Prev");
+    doc.trailer.remove(b"XRefStm");
+    doc.save(path)?;
+    Ok(())
+}
 
 /// Used when a page (or its inherited ancestors) has no `/MediaBox` -
 /// US Letter in points, the PDF spec default.

@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::EngineError;
 use image::imageops::FilterType;
 use image::{DynamicImage, GrayImage, ImageEncoder, ImageFormat, RgbImage};
@@ -40,7 +41,7 @@ pub fn compress_pdf_custom(
     recompress_images(&mut doc, quality, scale);
     doc.compress();
 
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -399,7 +400,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(&input).unwrap();
+        save_document(&mut doc, &input).unwrap();
 
         compress_pdf_by_level(
             input.to_string_lossy().into_owned(),

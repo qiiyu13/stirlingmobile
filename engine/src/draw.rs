@@ -1,6 +1,6 @@
 //! Freehand drawing: append vector strokes onto a page's content stream.
 
-use crate::content_util::page_size;
+use crate::content_util::{page_size, save_document};
 use crate::EngineError;
 use lopdf::content::{Content, Operation};
 use lopdf::Document;
@@ -50,7 +50,7 @@ fn load(input_path: &str) -> Result<Document, EngineError> {
 
 fn save(mut doc: Document, output_path: &str) -> Result<(), EngineError> {
     doc.compress();
-    doc.save(output_path)
+    save_document(&mut doc, output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -143,7 +143,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

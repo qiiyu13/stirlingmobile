@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::EngineError;
 use pdfium_render::prelude::*;
 use std::path::Path;
@@ -109,7 +110,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

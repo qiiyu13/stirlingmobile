@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::EngineError;
 use lopdf::{Document, Object};
 
@@ -33,7 +34,7 @@ pub fn rotate_pdf(
         }
     }
 
-    doc.save(&output_path)
+    save_document(&mut doc, &output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -71,7 +72,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

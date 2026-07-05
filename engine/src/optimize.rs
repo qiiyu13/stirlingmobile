@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::EngineError;
 
 /// Losslessly optimizes the PDF at `input_path` (object stream generation +
@@ -110,7 +111,7 @@ mod tests {
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
         doc.max_id = doc.objects.len() as u32;
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]

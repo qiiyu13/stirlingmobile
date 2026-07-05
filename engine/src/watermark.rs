@@ -3,7 +3,7 @@
 //! appended, self-contained `q ... Q` block so page graphics state is never
 //! disturbed.
 
-use crate::content_util::{add_font, add_image_xobject, add_opacity_gs, page_size};
+use crate::content_util::{add_font, add_image_xobject, add_opacity_gs, page_size, save_document};
 use crate::EngineError;
 use image::GenericImageView;
 use lopdf::content::{Content, Operation};
@@ -25,7 +25,7 @@ fn load(input_path: &str) -> Result<Document, EngineError> {
 
 fn save(mut doc: Document, output_path: &str) -> Result<(), EngineError> {
     doc.compress();
-    doc.save(output_path)
+    save_document(&mut doc, output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -253,7 +253,7 @@ mod tests {
             "Pages" => pages_id,
         });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     fn count_xobjects(doc: &Document) -> usize {

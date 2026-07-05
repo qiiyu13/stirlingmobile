@@ -1,3 +1,4 @@
+use crate::content_util::save_document;
 use crate::EngineError;
 use lopdf::content::{Content, Operation};
 use lopdf::{Document, Object};
@@ -276,7 +277,7 @@ pub(crate) fn load(input_path: &str) -> Result<Document, EngineError> {
 pub(crate) fn save(mut doc: Document, output_path: &str) -> Result<(), EngineError> {
     doc.prune_objects();
     doc.renumber_objects();
-    doc.save(output_path)
+    save_document(&mut doc, output_path)
         .map_err(|e| EngineError::WriteFailed {
             reason: e.to_string(),
         })?;
@@ -786,7 +787,7 @@ mod tests {
         );
         let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     fn page_text(doc: &Document) -> String {
@@ -881,7 +882,7 @@ mod tests {
         );
         let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     /// Builds a page whose text is shown through a `Type0`/CID font with
@@ -940,7 +941,7 @@ mod tests {
         );
         let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     /// Decodes a 2-byte-per-glyph Tj string back to ASCII (CID == ASCII
@@ -1096,7 +1097,7 @@ mod tests {
         );
         let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     /// Two text-show operators sharing a single `Td` (no reposition between
@@ -1134,7 +1135,7 @@ mod tests {
         );
         let catalog_id = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
         doc.trailer.set("Root", Object::Reference(catalog_id));
-        doc.save(path).unwrap();
+        save_document(&mut doc, path).unwrap();
     }
 
     #[test]
