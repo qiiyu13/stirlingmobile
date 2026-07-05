@@ -26,6 +26,15 @@ class ReorderViewModel : ViewModel() {
     private val _state = MutableStateFlow(ReorderUiState())
     val state: StateFlow<ReorderUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        viewModelScope.launch {
+            _state.value = ReorderUiState(statusMessage = "Reading…")
+            val count = withContext(Dispatchers.IO) { getPageCount(path) }
+            _state.value = ReorderUiState(statusMessage = "$count pages. Enter new order.", inputPath = path, pageCount = count)
+        }
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = ReorderUiState(statusMessage = "Reading…")

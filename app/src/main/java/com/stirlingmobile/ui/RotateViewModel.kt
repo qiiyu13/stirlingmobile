@@ -23,6 +23,11 @@ class RotateViewModel : ViewModel() {
     private val _state = MutableStateFlow(RotateUiState())
     val state: StateFlow<RotateUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = RotateUiState(statusMessage = "Choose rotation angle", inputPath = path)
+    }
+
+
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = RotateUiState(statusMessage = "Loading…")

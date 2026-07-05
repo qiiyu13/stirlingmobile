@@ -24,6 +24,11 @@ class ScaleViewModel : ViewModel() {
     private val _state = MutableStateFlow(ScaleUiState())
     val state: StateFlow<ScaleUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = ScaleUiState(statusMessage = "Ready.", inputPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = ScaleUiState(statusMessage = "Reading…")

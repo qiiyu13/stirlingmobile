@@ -29,6 +29,14 @@ class PasswordToolViewModel(private val mode: PasswordToolMode) : ViewModel() {
     private val _state = MutableStateFlow(PasswordToolUiState())
     val state: StateFlow<PasswordToolUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = PasswordToolUiState(
+            statusMessage = if (mode == PasswordToolMode.ADD) "Enter a password" else "Enter the document's password",
+            inputPath = path,
+        )
+    }
+
+
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = PasswordToolUiState(statusMessage = "Reading…")

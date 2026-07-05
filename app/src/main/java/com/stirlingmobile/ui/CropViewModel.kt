@@ -24,6 +24,11 @@ class CropViewModel : ViewModel() {
     private val _state = MutableStateFlow(CropUiState())
     val state: StateFlow<CropUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = CropUiState(statusMessage = "Ready.", inputPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = CropUiState(statusMessage = "Reading…")

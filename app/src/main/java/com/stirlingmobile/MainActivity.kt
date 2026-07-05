@@ -13,12 +13,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stirlingmobile.ui.AutoRedactScreen
 import com.stirlingmobile.ui.CompareScreen
 import com.stirlingmobile.ui.CompressScreen
@@ -35,6 +37,7 @@ import com.stirlingmobile.ui.MetadataScreen
 import com.stirlingmobile.ui.NUpScreen
 import com.stirlingmobile.ui.OcrScreen
 import com.stirlingmobile.ui.OptimizeScreen
+import com.stirlingmobile.ui.PipelineState
 import com.stirlingmobile.ui.OverlayScreen
 import com.stirlingmobile.ui.PageNumbersScreen
 import com.stirlingmobile.ui.PagesToolMode
@@ -70,50 +73,63 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun App() {
     var tool by remember { mutableStateOf(Tool.HOME) }
+    val pipeline: PipelineState = viewModel()
+    Column {
+    if (tool != Tool.HOME) {
+        Button(onClick = { tool = Tool.HOME }) { Text("< Home") }
+    }
     when (tool) {
-        Tool.HOME -> HomeScreen(onSelect = { tool = it })
-        Tool.MERGE -> MergeScreen()
+        Tool.HOME -> HomeScreen(pipeline = pipeline, onSelect = { tool = it })
+        Tool.MERGE -> MergeScreen(pipeline = pipeline)
         Tool.SPLIT -> SplitScreen()
-        Tool.ROTATE -> RotateScreen()
-        Tool.REMOVE -> PagesToolScreen(PagesToolMode.REMOVE)
-        Tool.EXTRACT -> PagesToolScreen(PagesToolMode.EXTRACT)
-        Tool.COMPRESS -> CompressScreen()
-        Tool.OPTIMIZE -> OptimizeScreen()
-        Tool.ADD_PASSWORD -> PasswordToolScreen(PasswordToolMode.ADD)
-        Tool.REMOVE_PASSWORD -> PasswordToolScreen(PasswordToolMode.REMOVE)
-        Tool.IMAGES_TO_PDF -> ImagesToPdfScreen()
+        Tool.ROTATE -> RotateScreen(pipeline = pipeline)
+        Tool.REMOVE -> PagesToolScreen(PagesToolMode.REMOVE, pipeline = pipeline)
+        Tool.EXTRACT -> PagesToolScreen(PagesToolMode.EXTRACT, pipeline = pipeline)
+        Tool.COMPRESS -> CompressScreen(pipeline = pipeline)
+        Tool.OPTIMIZE -> OptimizeScreen(pipeline = pipeline)
+        Tool.ADD_PASSWORD -> PasswordToolScreen(PasswordToolMode.ADD, pipeline = pipeline)
+        Tool.REMOVE_PASSWORD -> PasswordToolScreen(PasswordToolMode.REMOVE, pipeline = pipeline)
+        Tool.IMAGES_TO_PDF -> ImagesToPdfScreen(pipeline = pipeline)
         Tool.PDF_TO_IMAGES -> PdfToImagesScreen()
         Tool.HTML_TO_PDF -> HtmlToPdfScreen()
         Tool.MARKDOWN_TO_PDF -> MarkdownToPdfScreen()
-        Tool.SIGNATURE_STAMP -> SignatureStampScreen()
-        Tool.SIGN_PDF -> SignPdfScreen()
+        Tool.SIGNATURE_STAMP -> SignatureStampScreen(pipeline = pipeline)
+        Tool.SIGN_PDF -> SignPdfScreen(pipeline = pipeline)
         Tool.GENERATE_CERTIFICATE -> GenerateCertificateScreen()
-        Tool.REDACT -> RedactScreen()
-        Tool.AUTO_REDACT -> AutoRedactScreen()
-        Tool.WATERMARK -> WatermarkScreen()
-        Tool.PAGE_NUMBERS -> PageNumbersScreen()
-        Tool.SANITIZE -> SanitizeScreen()
-        Tool.METADATA -> MetadataScreen()
-        Tool.OCR -> OcrScreen()
-        Tool.FORMS_FILL -> FormsFillScreen()
-        Tool.FORMS_FLATTEN -> FormsFlattenScreen()
+        Tool.REDACT -> RedactScreen(pipeline = pipeline)
+        Tool.AUTO_REDACT -> AutoRedactScreen(pipeline = pipeline)
+        Tool.WATERMARK -> WatermarkScreen(pipeline = pipeline)
+        Tool.PAGE_NUMBERS -> PageNumbersScreen(pipeline = pipeline)
+        Tool.SANITIZE -> SanitizeScreen(pipeline = pipeline)
+        Tool.METADATA -> MetadataScreen(pipeline = pipeline)
+        Tool.OCR -> OcrScreen(pipeline = pipeline)
+        Tool.FORMS_FILL -> FormsFillScreen(pipeline = pipeline)
+        Tool.FORMS_FLATTEN -> FormsFlattenScreen(pipeline = pipeline)
         Tool.FORMS_EXTRACT -> FormsExtractScreen()
-        Tool.REORDER -> ReorderScreen()
-        Tool.N_UP -> NUpScreen()
-        Tool.CROP -> CropScreen()
-        Tool.SCALE -> ScaleScreen()
+        Tool.REORDER -> ReorderScreen(pipeline = pipeline)
+        Tool.N_UP -> NUpScreen(pipeline = pipeline)
+        Tool.CROP -> CropScreen(pipeline = pipeline)
+        Tool.SCALE -> ScaleScreen(pipeline = pipeline)
         Tool.COMPARE -> CompareScreen()
-        Tool.OVERLAY -> OverlayScreen()
+        Tool.OVERLAY -> OverlayScreen(pipeline = pipeline)
+    }
     }
 }
 
 @Composable
-private fun HomeScreen(onSelect: (Tool) -> Unit) {
+private fun HomeScreen(pipeline: PipelineState, onSelect: (Tool) -> Unit) {
+    val pipelineState by pipeline.state.collectAsState()
     Column(
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("Stirling Mobile")
+        pipelineState.current?.let { entry ->
+            Text("Pipeline: ${entry.label}")
+            if (pipelineState.canUndo) {
+                Button(onClick = { pipeline.undo() }) { Text("Undo") }
+            }
+        }
         Button(onClick = { onSelect(Tool.MERGE) }) { Text("Merge") }
         Button(onClick = { onSelect(Tool.SPLIT) }) { Text("Split") }
         Button(onClick = { onSelect(Tool.ROTATE) }) { Text("Rotate") }

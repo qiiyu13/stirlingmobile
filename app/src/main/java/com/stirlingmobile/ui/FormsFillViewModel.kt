@@ -29,6 +29,21 @@ class FormsFillViewModel : ViewModel() {
     private val _state = MutableStateFlow(FormsFillUiState())
     val state: StateFlow<FormsFillUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        viewModelScope.launch {
+            _state.value = FormsFillUiState(statusMessage = "Reading form fields…", busy = true)
+            val fields = withContext(Dispatchers.IO) { formsGetFields(path) }
+            val initialValues = fields.associate { it.name to (it.value ?: "") }
+            _state.value = FormsFillUiState(
+                statusMessage = "${fields.size} field(s) found. Edit values below.",
+                pdfPath = path,
+                fields = fields,
+                fieldValues = initialValues,
+            )
+        }
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = FormsFillUiState(statusMessage = "Reading form fields…", busy = true)

@@ -29,6 +29,19 @@ class SignatureStampViewModel : ViewModel() {
     private val _state = MutableStateFlow(SignatureStampUiState())
     val state: StateFlow<SignatureStampUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        viewModelScope.launch {
+            _state.value = SignatureStampUiState(statusMessage = "Reading…")
+            val pageCount = withContext(Dispatchers.IO) { getPageCount(path) }
+            _state.value = SignatureStampUiState(
+                statusMessage = "$pageCount pages. Now select a signature image.",
+                pdfPath = path,
+                pageCount = pageCount,
+            )
+        }
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = SignatureStampUiState(statusMessage = "Reading…")

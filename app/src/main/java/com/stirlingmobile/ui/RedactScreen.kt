@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,9 +35,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun RedactScreen(viewModel: RedactViewModel = viewModel()) {
+fun RedactScreen(pipeline: PipelineState? = null, viewModel: RedactViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+    val pipelineCurrent = pipeline?.state?.collectAsState()?.value?.current
+    LaunchedEffect(pipelineCurrent) {
+        if (state.pdfPath == null && pipelineCurrent != null) {
+            viewModel.usePipelineFile(context, pipelineCurrent.path)
+        }
+    }
+    LaunchedEffect(state.resultFilePath) {
+        state.resultFilePath?.let { pipeline?.push(it, "Redacted") }
+    }
 
     val pickPdf = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()

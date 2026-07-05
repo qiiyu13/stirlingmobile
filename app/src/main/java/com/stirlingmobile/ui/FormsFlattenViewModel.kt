@@ -24,6 +24,11 @@ class FormsFlattenViewModel : ViewModel() {
     private val _state = MutableStateFlow(FormsFlattenUiState())
     val state: StateFlow<FormsFlattenUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = FormsFlattenUiState(statusMessage = "Ready. Tap Flatten.", pdfPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = FormsFlattenUiState(statusMessage = "Reading…")

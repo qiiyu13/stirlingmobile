@@ -25,6 +25,11 @@ class OverlayViewModel : ViewModel() {
     private val _state = MutableStateFlow(OverlayUiState())
     val state: StateFlow<OverlayUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = _state.value.copy(basePath = path, statusMessage = "Base PDF ready.")
+    }
+
+
     fun onPickBase(context: Context, uri: Uri) {
         val path = copyToWorking(context, uri, "overlay_base.pdf")
         _state.value = _state.value.copy(basePath = path, statusMessage = "Base PDF ready.")

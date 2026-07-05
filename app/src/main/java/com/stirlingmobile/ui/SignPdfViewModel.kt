@@ -30,6 +30,11 @@ class SignPdfViewModel : ViewModel() {
     private val _state = MutableStateFlow(SignPdfUiState())
     val state: StateFlow<SignPdfUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = SignPdfUiState(statusMessage = "Now select your signing certificate (.pfx/.p12).", pdfPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = SignPdfUiState(statusMessage = "Reading…")

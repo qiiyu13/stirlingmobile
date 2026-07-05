@@ -41,6 +41,31 @@ class RedactViewModel : ViewModel() {
     private val _state = MutableStateFlow(RedactUiState())
     val state: StateFlow<RedactUiState> = _state
 
+    fun usePipelineFile(context: Context, path: String) {
+        viewModelScope.launch {
+            _state.value = RedactUiState(statusMessage = "Rendering preview…")
+            try {
+                val pages = withContext(Dispatchers.IO) {
+                    val outputDir = File(File(path).parentFile, "redact_preview_${UUID.randomUUID()}").apply { mkdirs() }
+                    convertPdfToImages(
+                        path,
+                        context.applicationInfo.nativeLibraryDir,
+                        REDACT_PREVIEW_DPI.toUInt(),
+                        outputDir.absolutePath,
+                    )
+                }
+                _state.value = RedactUiState(
+                    statusMessage = "Draw a box over anything to redact, then pick another page or Redact.",
+                    pdfPath = path,
+                    pageImagePaths = pages,
+                )
+            } catch (e: Exception) {
+                _state.value = RedactUiState(statusMessage = "Failed to render preview: ${e.message}")
+            }
+        }
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = RedactUiState(statusMessage = "Rendering preview…")

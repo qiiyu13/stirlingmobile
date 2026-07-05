@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -20,9 +21,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun OcrScreen(viewModel: OcrViewModel = viewModel()) {
+fun OcrScreen(pipeline: PipelineState? = null, viewModel: OcrViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+    val pipelineCurrent = pipeline?.state?.collectAsState()?.value?.current
+    LaunchedEffect(pipelineCurrent) {
+        if (state.pdfPath == null && pipelineCurrent != null) {
+            viewModel.usePipelineFile(pipelineCurrent.path)
+        }
+    }
+    LaunchedEffect(state.resultPdfPath) {
+        state.resultPdfPath?.let { pipeline?.push(it, "OCR'd") }
+    }
 
     val pickPdf = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let { viewModel.onPdfPicked(context, it) }

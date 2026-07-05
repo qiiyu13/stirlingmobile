@@ -27,6 +27,11 @@ class AutoRedactViewModel : ViewModel() {
     private val _state = MutableStateFlow(AutoRedactUiState())
     val state: StateFlow<AutoRedactUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = AutoRedactUiState(statusMessage = "Choose what to redact, then Redact.", pdfPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = AutoRedactUiState(statusMessage = "Reading…")

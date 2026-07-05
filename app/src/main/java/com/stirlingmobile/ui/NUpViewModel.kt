@@ -24,6 +24,11 @@ class NUpViewModel : ViewModel() {
     private val _state = MutableStateFlow(NUpUiState())
     val state: StateFlow<NUpUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = NUpUiState(statusMessage = "Ready.", inputPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = NUpUiState(statusMessage = "Reading…")

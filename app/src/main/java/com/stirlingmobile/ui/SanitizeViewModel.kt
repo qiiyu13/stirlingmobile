@@ -24,6 +24,11 @@ class SanitizeViewModel : ViewModel() {
     private val _state = MutableStateFlow(SanitizeUiState())
     val state: StateFlow<SanitizeUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = SanitizeUiState(statusMessage = "Choose what to strip, then Sanitize.", pdfPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = SanitizeUiState(statusMessage = "Reading…")

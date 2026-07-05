@@ -27,6 +27,16 @@ class CompressViewModel : ViewModel() {
     private val _state = MutableStateFlow(CompressUiState())
     val state: StateFlow<CompressUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        val size = File(path).length()
+        _state.value = CompressUiState(
+            statusMessage = "Original size: ${formatSize(size)}",
+            inputPath = path,
+            originalSizeBytes = size,
+        )
+    }
+
+
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = CompressUiState(statusMessage = "Loading…")

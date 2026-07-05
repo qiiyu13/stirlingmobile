@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,9 +26,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 private val POSITIONS = listOf("top-left", "top-right", "center", "bottom-left", "bottom-right")
 
 @Composable
-fun SignatureStampScreen(viewModel: SignatureStampViewModel = viewModel()) {
+fun SignatureStampScreen(pipeline: PipelineState? = null, viewModel: SignatureStampViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+    val pipelineCurrent = pipeline?.state?.collectAsState()?.value?.current
+    LaunchedEffect(pipelineCurrent) {
+        if (state.pdfPath == null && pipelineCurrent != null) {
+            viewModel.usePipelineFile(pipelineCurrent.path)
+        }
+    }
+    LaunchedEffect(state.resultFilePath) {
+        state.resultFilePath?.let { pipeline?.push(it, "Stamped") }
+    }
 
     var pageText by remember { mutableStateOf("1") }
     var position by remember { mutableStateOf("bottom-right") }

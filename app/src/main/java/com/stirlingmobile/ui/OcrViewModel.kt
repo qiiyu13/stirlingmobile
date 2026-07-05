@@ -43,6 +43,11 @@ class OcrViewModel : ViewModel() {
     private val _state = MutableStateFlow(OcrUiState())
     val state: StateFlow<OcrUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = OcrUiState(statusMessage = "Ready. Tap Run OCR.", pdfPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = OcrUiState(statusMessage = "Reading…")

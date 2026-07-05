@@ -31,6 +31,19 @@ class PagesToolViewModel(private val mode: PagesToolMode) : ViewModel() {
     private val _state = MutableStateFlow(PagesToolUiState())
     val state: StateFlow<PagesToolUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        viewModelScope.launch {
+            _state.value = PagesToolUiState(statusMessage = "Reading…")
+            val pageCount = withContext(Dispatchers.IO) { getPageCount(path) }
+            _state.value = PagesToolUiState(
+                statusMessage = "$pageCount pages. Enter page numbers to ${mode.verb.lowercase()}.",
+                inputPath = path,
+                pageCount = pageCount,
+            )
+        }
+    }
+
+
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = PagesToolUiState(statusMessage = "Reading…")

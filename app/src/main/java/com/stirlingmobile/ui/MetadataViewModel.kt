@@ -27,6 +27,15 @@ class MetadataViewModel : ViewModel() {
     private val _state = MutableStateFlow(MetadataUiState())
     val state: StateFlow<MetadataUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        viewModelScope.launch {
+            _state.value = MetadataUiState(statusMessage = "Reading…")
+            val meta = withContext(Dispatchers.IO) { metadataExtract(path) }
+            _state.value = MetadataUiState(statusMessage = "Edit fields, then Save.", pdfPath = path, metadata = meta)
+        }
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = MetadataUiState(statusMessage = "Reading…")

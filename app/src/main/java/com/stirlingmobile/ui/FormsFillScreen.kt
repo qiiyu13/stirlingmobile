@@ -14,6 +14,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -22,9 +23,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun FormsFillScreen(viewModel: FormsFillViewModel = viewModel()) {
+fun FormsFillScreen(pipeline: PipelineState? = null, viewModel: FormsFillViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+    val pipelineCurrent = pipeline?.state?.collectAsState()?.value?.current
+    LaunchedEffect(pipelineCurrent) {
+        if (state.pdfPath == null && pipelineCurrent != null) {
+            viewModel.usePipelineFile(pipelineCurrent.path)
+        }
+    }
+    LaunchedEffect(state.resultPath) {
+        state.resultPath?.let { pipeline?.push(it, "Filled") }
+    }
 
     val pickPdf = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let { viewModel.onPdfPicked(context, it) }

@@ -25,6 +25,11 @@ class PageNumbersViewModel : ViewModel() {
     private val _state = MutableStateFlow(PageNumbersUiState())
     val state: StateFlow<PageNumbersUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = PageNumbersUiState(statusMessage = "Set options, then Apply.", pdfPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = PageNumbersUiState(statusMessage = "Reading…")

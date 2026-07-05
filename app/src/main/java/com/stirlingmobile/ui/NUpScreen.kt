@@ -10,6 +10,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -23,9 +24,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 private val N_OPTIONS = listOf(2u, 4u, 6u, 9u)
 
 @Composable
-fun NUpScreen(viewModel: NUpViewModel = viewModel()) {
+fun NUpScreen(pipeline: PipelineState? = null, viewModel: NUpViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+    val pipelineCurrent = pipeline?.state?.collectAsState()?.value?.current
+    LaunchedEffect(pipelineCurrent) {
+        if (state.inputPath == null && pipelineCurrent != null) {
+            viewModel.usePipelineFile(pipelineCurrent.path)
+        }
+    }
+    LaunchedEffect(state.resultPath) {
+        state.resultPath?.let { pipeline?.push(it, "N-up") }
+    }
     var selectedN by remember { mutableIntStateOf(0) }
 
     val pickPdf = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->

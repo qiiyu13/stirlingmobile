@@ -15,6 +15,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,9 +32,18 @@ private val POSITIONS = listOf(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PageNumbersScreen(viewModel: PageNumbersViewModel = viewModel()) {
+fun PageNumbersScreen(pipeline: PipelineState? = null, viewModel: PageNumbersViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+    val pipelineCurrent = pipeline?.state?.collectAsState()?.value?.current
+    LaunchedEffect(pipelineCurrent) {
+        if (state.pdfPath == null && pipelineCurrent != null) {
+            viewModel.usePipelineFile(pipelineCurrent.path)
+        }
+    }
+    LaunchedEffect(state.resultFilePath) {
+        state.resultFilePath?.let { pipeline?.push(it, "Page numbers added") }
+    }
 
     var position by remember { mutableStateOf("bottom-center") }
     var format by remember { mutableStateOf("{n}") }

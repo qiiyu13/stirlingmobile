@@ -27,6 +27,11 @@ class WatermarkViewModel : ViewModel() {
     private val _state = MutableStateFlow(WatermarkUiState())
     val state: StateFlow<WatermarkUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = WatermarkUiState(statusMessage = "Set options, then Apply.", pdfPath = path)
+    }
+
+
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = WatermarkUiState(statusMessage = "Reading…")

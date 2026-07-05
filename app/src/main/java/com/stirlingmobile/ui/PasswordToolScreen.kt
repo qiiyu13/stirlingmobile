@@ -10,6 +10,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,10 +30,19 @@ private class PasswordToolViewModelFactory(private val mode: PasswordToolMode) :
 }
 
 @Composable
-fun PasswordToolScreen(mode: PasswordToolMode) {
+fun PasswordToolScreen(mode: PasswordToolMode, pipeline: PipelineState? = null) {
     val context = LocalContext.current
     val viewModel: PasswordToolViewModel = viewModel(factory = PasswordToolViewModelFactory(mode))
     val state by viewModel.state.collectAsState()
+    val pipelineCurrent = pipeline?.state?.collectAsState()?.value?.current
+    LaunchedEffect(pipelineCurrent) {
+        if (state.inputPath == null && pipelineCurrent != null) {
+            viewModel.usePipelineFile(pipelineCurrent.path)
+        }
+    }
+    LaunchedEffect(state.resultFilePath) {
+        state.resultFilePath?.let { pipeline?.push(it, "Password updated") }
+    }
 
     var password by remember { mutableStateOf("") }
     var ownerPassword by remember { mutableStateOf("") }

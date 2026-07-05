@@ -25,6 +25,14 @@ class OptimizeViewModel : ViewModel() {
     private val _state = MutableStateFlow(OptimizeUiState())
     val state: StateFlow<OptimizeUiState> = _state
 
+    fun usePipelineFile(path: String) {
+        _state.value = OptimizeUiState(
+            statusMessage = "From pipeline: ${formatSize(File(path).length())}",
+            inputPath = path,
+            originalSizeBytes = File(path).length(),
+        )
+    }
+
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = OptimizeUiState(statusMessage = "Loading…")
