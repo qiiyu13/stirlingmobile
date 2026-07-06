@@ -9,7 +9,9 @@
 //! Iteration count: `STRESS_ITERS` env var, default 200 (roadmap asks for
 //! 1000; bump the env var for a full run, default kept fast for everyday use).
 
-use lopdf::{content::Content, content::Operation, dictionary, Document, Object};
+use image::ImageEncoder;
+use lopdf::{content::Content, content::Operation, dictionary, Document, Object, Stream};
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -131,6 +133,88 @@ fn build_pdf_sized(path: &Path, n: u32, marker_prefix: &str, target_bytes: usize
             ],
         };
         let content_id = doc.add_object(lopdf::Stream::new(dictionary! {}, content.encode().unwrap()));
+        let page_id = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages_id,
+            "Resources" => resources_id,
+            "MediaBox" => vec![0.into(), 0.into(), 612.into(), 792.into()],
+            "Contents" => content_id,
+        });
+        kids.push(Object::Reference(page_id));
+    }
+    doc.objects.insert(
+        pages_id,
+        Object::Dictionary(dictionary! {
+            "Type" => "Pages",
+            "Count" => n as i64,
+            "Kids" => kids,
+        }),
+    );
+    let catalog_id = doc.add_object(dictionary! {
+        "Type" => "Catalog",
+        "Pages" => pages_id,
+    });
+    doc.trailer.set("Root", Object::Reference(catalog_id));
+    doc.save(path).unwrap();
+}
+
+/// Encodes `w`x`h` of deterministic random-noise RGB pixels as a real JPEG
+/// (noise is worst-case for JPEG compression, so this is a harder input than
+/// a typical scanned photo — fine for a perf benchmark, not for fidelity).
+fn random_jpeg_bytes(w: u32, h: u32, seed: u32) -> Vec<u8> {
+    let mut rng = Rng(seed);
+    let mut raw = vec![0u8; (w * h * 3) as usize];
+    for b in raw.iter_mut() {
+        *b = rng.next() as u8;
+    }
+    let mut buf = Vec::new();
+    {
+        let mut cursor = Cursor::new(&mut buf);
+        let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, 90);
+        encoder
+            .write_image(&raw, w, h, image::ExtendedColorType::Rgb8)
+            .unwrap();
+    }
+    buf
+}
+
+/// Builds an n-page PDF with one full-page JPEG image per page (same encoded
+/// bytes reused per page, each as its own XObject) — needed to exercise
+/// `compress_pdf_by_level`'s image-recompression path, which `build_pdf`'s
+/// text-only pages never touch.
+fn build_pdf_with_images(path: &Path, n: u32, img_w: u32, img_h: u32) {
+    let mut doc = Document::with_version("1.7");
+    let jpeg = random_jpeg_bytes(img_w, img_h, 0xC0FFEE);
+    let pages_id = doc.new_object_id();
+    let mut kids = Vec::new();
+    for _ in 1..=n {
+        let img_id = doc.add_object(Stream::new(
+            dictionary! {
+                "Type" => "XObject",
+                "Subtype" => "Image",
+                "Width" => img_w as i64,
+                "Height" => img_h as i64,
+                "ColorSpace" => "DeviceRGB",
+                "BitsPerComponent" => 8,
+                "Filter" => "DCTDecode",
+            },
+            jpeg.clone(),
+        ));
+        let resources_id = doc.add_object(dictionary! {
+            "XObject" => dictionary! { "Im1" => img_id },
+        });
+        let content = Content {
+            operations: vec![
+                Operation::new("q", vec![]),
+                Operation::new(
+                    "cm",
+                    vec![612.into(), 0.into(), 0.into(), 792.into(), 0.into(), 0.into()],
+                ),
+                Operation::new("Do", vec!["Im1".into()]),
+                Operation::new("Q", vec![]),
+            ],
+        };
+        let content_id = doc.add_object(Stream::new(dictionary! {}, content.encode().unwrap()));
         let page_id = doc.add_object(dictionary! {
             "Type" => "Page",
             "Parent" => pages_id,
@@ -497,5 +581,97 @@ fn bench_rotate_50mb() {
         elapsed.as_secs_f64() < 3.0,
         "Rotate regression: took {:.3}s, budget is 3s",
         elapsed.as_secs_f64()
+    );
+}
+
+/// W21 profiling: "Compress (lossy) | 50MB image-heavy PDF | < 10s"
+/// (07-performance-budget.md §1). 24 full-page JPEGs of random noise —
+/// noise is worst-case for JPEG, so this decode/recompress cost is an upper
+/// bound, not an average case.
+#[test]
+#[ignore]
+fn bench_compress_50mb() {
+    let dir = work_dir();
+    let input = dir.join("compress_in.pdf");
+    let out = dir.join("compress_out.pdf");
+    build_pdf_with_images(&input, 10, 1400, 1980);
+    let in_size = std::fs::metadata(&input).unwrap().len();
+
+    let start = std::time::Instant::now();
+    stirling_engine::compress_pdf_by_level(
+        input.to_string_lossy().into_owned(),
+        5,
+        out.to_string_lossy().into_owned(),
+    )
+    .expect("compress failed");
+    let elapsed = start.elapsed();
+
+    let out_size = std::fs::metadata(&out).unwrap().len();
+    assert!(qpdf_check(&out), "qpdf --check failed on compressed output");
+
+    println!(
+        "Compress: {}MB -> {}MB (level 5) in {:.3}s (target <10s)",
+        in_size / 1024 / 1024,
+        out_size / 1024 / 1024,
+        elapsed.as_secs_f64()
+    );
+    assert!(
+        elapsed.as_secs_f64() < 10.0,
+        "Compress regression: took {:.3}s, budget is 10s",
+        elapsed.as_secs_f64()
+    );
+}
+
+/// W21 profiling: "OCR (English) | 10 pages, 300dpi | < 15s per page"
+/// (07-performance-budget.md §1). NOTE: per ocr.rs, the Rust engine never
+/// runs Tesseract/PaddleOCR itself — recognition happens on-device in
+/// Kotlin, and that inference cost is the real budget bottleneck, not
+/// benchable from a host-side Rust test. This only times the Rust side's
+/// job: overlaying an already-recognized invisible text layer onto the PDF.
+#[test]
+#[ignore]
+fn bench_ocr_overlay_10pages() {
+    use stirling_engine::{OcrPage, OcrWord};
+
+    let dir = work_dir();
+    let input = dir.join("ocr_in.pdf");
+    let out = dir.join("ocr_out.pdf");
+    build_pdf(&input, 10, "OCR");
+
+    // ~50 recognized words per page at 300dpi on a Letter page (2550x3300px).
+    let pages: Vec<OcrPage> = (0..10u32)
+        .map(|page_index| OcrPage {
+            page_index,
+            image_width: 2550.0,
+            image_height: 3300.0,
+            words: (0..50u32)
+                .map(|w| OcrWord {
+                    text: format!("word{w}"),
+                    x: (w % 10) as f32 * 240.0,
+                    y: (w / 10) as f32 * 600.0,
+                    width: 200.0,
+                    height: 40.0,
+                })
+                .collect(),
+        })
+        .collect();
+
+    let start = std::time::Instant::now();
+    stirling_engine::ocr_apply_text_layer(
+        input.to_string_lossy().into_owned(),
+        pages,
+        out.to_string_lossy().into_owned(),
+    )
+    .expect("ocr overlay failed");
+    let elapsed = start.elapsed();
+
+    assert!(qpdf_check(&out), "qpdf --check failed on ocr output");
+    let text = pdftotext(&out);
+    assert!(text.contains("word0"), "overlay text missing from output");
+
+    println!(
+        "OCR overlay only (not recognition): 10 pages / 500 words in {:.3}s ({:.3}s/page; real OCR budget is <15s/page but is Tesseract/PaddleOCR inference cost, measured on-device)",
+        elapsed.as_secs_f64(),
+        elapsed.as_secs_f64() / 10.0
     );
 }
