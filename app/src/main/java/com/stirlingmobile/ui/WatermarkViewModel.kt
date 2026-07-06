@@ -1,9 +1,11 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.stirlingmobile.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,18 +25,18 @@ data class WatermarkUiState(
 
 /// Text or image watermark, tiled across every page with opacity and rotation
 /// (contentWatermarkText / contentWatermarkImage).
-class WatermarkViewModel : ViewModel() {
+class WatermarkViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(WatermarkUiState())
     val state: StateFlow<WatermarkUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = WatermarkUiState(statusMessage = "Set options, then Apply.", pdfPath = path)
+        _state.value = WatermarkUiState(statusMessage = getApplication<Application>().getString(R.string.tool_watermark_set_options), pdfPath = path)
     }
 
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = WatermarkUiState(statusMessage = "Reading…")
+            _state.value = WatermarkUiState(statusMessage = context.getString(R.string.status_reading))
             try {
                 val path = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -42,9 +44,9 @@ class WatermarkViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = WatermarkUiState(statusMessage = "Set options, then Apply.", pdfPath = path)
+                _state.value = WatermarkUiState(statusMessage = context.getString(R.string.tool_watermark_set_options), pdfPath = path)
             } catch (e: Exception) {
-                _state.value = WatermarkUiState(statusMessage = "Failed to read: ${e.message}")
+                _state.value = WatermarkUiState(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -59,9 +61,9 @@ class WatermarkViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(img.outputStream()) }
                     img.absolutePath
                 }
-                _state.value = state.value.copy(statusMessage = "Image chosen.", imagePath = path)
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.tool_watermark_image_chosen), imagePath = path)
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed to read image: ${e.message}")
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.error_failed_to_read_image, e.message))
             }
         }
     }
@@ -69,7 +71,7 @@ class WatermarkViewModel : ViewModel() {
     fun applyText(text: String, fontSize: Float, rotation: Float, opacity: Float) {
         val pdfPath = state.value.pdfPath ?: return
         if (text.isBlank()) return
-        run("Watermarking…") { output ->
+        run(getApplication<Application>().getString(R.string.tool_watermark_watermarking_status)) { output ->
             contentWatermarkText(pdfPath, text, fontSize, rotation, opacity, output)
         }
     }
@@ -77,7 +79,7 @@ class WatermarkViewModel : ViewModel() {
     fun applyImage(widthFraction: Float, rotation: Float, opacity: Float) {
         val pdfPath = state.value.pdfPath ?: return
         val imagePath = state.value.imagePath ?: return
-        run("Watermarking…") { output ->
+        run(getApplication<Application>().getString(R.string.tool_watermark_watermarking_status)) { output ->
             contentWatermarkImage(pdfPath, imagePath, widthFraction, rotation, opacity, output)
         }
     }
@@ -93,10 +95,10 @@ class WatermarkViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.error_failed, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Done. Ready to save.", resultFilePath = outputPath)
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.status_done_ready_to_save), resultFilePath = outputPath)
         }
     }
 
@@ -108,7 +110,7 @@ class WatermarkViewModel : ViewModel() {
                     context.contentResolver.openOutputStream(destination, "wt")!!.use { output -> input.copyTo(output) }
                 }
             }
-            _state.value = state.value.copy(statusMessage = "Saved.")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

@@ -13,8 +13,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun HtmlToPdfScreen(viewModel: HtmlToPdfViewModel = viewModel()) {
@@ -29,10 +31,10 @@ fun HtmlToPdfScreen(viewModel: HtmlToPdfViewModel = viewModel()) {
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("HTML to PDF")
+        Text(stringResource(R.string.tool_html_to_pdf_title))
 
         Button(onClick = { pickFile.launch(arrayOf("text/html")) }) {
-            Text("Select HTML file")
+            Text(stringResource(R.string.tool_html_to_pdf_select_input))
         }
 
         Text(state.statusMessage)

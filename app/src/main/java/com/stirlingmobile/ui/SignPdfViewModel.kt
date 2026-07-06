@@ -1,9 +1,11 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.stirlingmobile.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,18 +28,21 @@ data class SignPdfUiState(
 /// and is zeroed on the Rust side after use. `permission` non-null means
 /// certify (sets /DocMDP) instead of a plain approval signature - must be
 /// the document's first signature, per ISO 32000-1 §12.8.2.2.
-class SignPdfViewModel : ViewModel() {
+class SignPdfViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(SignPdfUiState())
     val state: StateFlow<SignPdfUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = SignPdfUiState(statusMessage = "Now select your signing certificate (.pfx/.p12).", pdfPath = path)
+        _state.value = SignPdfUiState(
+            statusMessage = getApplication<Application>().getString(R.string.tool_sign_pdf_select_certificate_prompt),
+            pdfPath = path,
+        )
     }
 
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = SignPdfUiState(statusMessage = "Reading…")
+            _state.value = SignPdfUiState(statusMessage = context.getString(R.string.status_reading))
             try {
                 val path = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -45,9 +50,9 @@ class SignPdfViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = SignPdfUiState(statusMessage = "Now select your signing certificate (.pfx/.p12).", pdfPath = path)
+                _state.value = SignPdfUiState(statusMessage = context.getString(R.string.tool_sign_pdf_select_certificate_prompt), pdfPath = path)
             } catch (e: Exception) {
-                _state.value = SignPdfUiState(statusMessage = "Failed to read: ${e.message}")
+                _state.value = SignPdfUiState(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -58,7 +63,7 @@ class SignPdfViewModel : ViewModel() {
             val workingDir = File(pdfPath).parentFile!!
             val dest = File(workingDir, "sign_identity.pfx")
             context.contentResolver.openInputStream(uri)!!.use { it.copyTo(dest.outputStream()) }
-            _state.value = state.value.copy(statusMessage = "Enter the certificate password, then Sign.", pfxPath = dest.absolutePath)
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.tool_sign_pdf_enter_password_prompt), pfxPath = dest.absolutePath)
         }
     }
 
@@ -67,7 +72,14 @@ class SignPdfViewModel : ViewModel() {
         val pfxPath = state.value.pfxPath ?: return
 
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = if (certifyPermission != null) "Certifying…" else "Signing…")
+            val app = getApplication<Application>()
+            _state.value = state.value.copy(
+                statusMessage = if (certifyPermission != null) {
+                    app.getString(R.string.tool_sign_pdf_certifying_status)
+                } else {
+                    app.getString(R.string.tool_sign_pdf_signing_status)
+                },
+            )
             val outputPath = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(pdfPath).parentFile!!
@@ -80,10 +92,10 @@ class SignPdfViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Signing failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = app.getString(R.string.tool_sign_pdf_failed_status, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Done. Ready to save.", resultFilePath = outputPath)
+            _state.value = state.value.copy(statusMessage = app.getString(R.string.status_done_ready_to_save), resultFilePath = outputPath)
         }
     }
 
@@ -97,7 +109,7 @@ class SignPdfViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = SignPdfUiState(statusMessage = "Saved.")
+            _state.value = SignPdfUiState(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

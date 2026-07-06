@@ -19,8 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun CropScreen(pipeline: PipelineState? = null, viewModel: CropViewModel = viewModel()) {
@@ -33,7 +35,7 @@ fun CropScreen(pipeline: PipelineState? = null, viewModel: CropViewModel = viewM
         }
     }
     LaunchedEffect(state.resultPath) {
-        state.resultPath?.let { pipeline?.push(it, "Cropped") }
+        state.resultPath?.let { pipeline?.push(it, context.getString(R.string.tool_crop_history_label)) }
     }
     var x1Text by remember { mutableStateOf("") }
     var y1Text by remember { mutableStateOf("") }
@@ -48,27 +50,27 @@ fun CropScreen(pipeline: PipelineState? = null, viewModel: CropViewModel = viewM
     }
 
     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Crop Pages")
-        Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) { Text("Select PDF") }
+        Text(stringResource(R.string.tool_crop_title))
+        Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) { Text(stringResource(R.string.action_select_pdf)) }
         if (state.busy) CircularProgressIndicator()
         Text(state.statusMessage)
 
         if (state.inputPath != null && !state.busy) {
-            OutlinedTextField(value = x1Text, onValueChange = { x1Text = it }, label = { Text("Left (x1)") }, singleLine = true)
-            OutlinedTextField(value = y1Text, onValueChange = { y1Text = it }, label = { Text("Bottom (y1)") }, singleLine = true)
-            OutlinedTextField(value = x2Text, onValueChange = { x2Text = it }, label = { Text("Right (x2)") }, singleLine = true)
-            OutlinedTextField(value = y2Text, onValueChange = { y2Text = it }, label = { Text("Top (y2)") }, singleLine = true)
+            OutlinedTextField(value = x1Text, onValueChange = { x1Text = it }, label = { Text(stringResource(R.string.tool_crop_label_x1)) }, singleLine = true)
+            OutlinedTextField(value = y1Text, onValueChange = { y1Text = it }, label = { Text(stringResource(R.string.tool_crop_label_y1)) }, singleLine = true)
+            OutlinedTextField(value = x2Text, onValueChange = { x2Text = it }, label = { Text(stringResource(R.string.tool_crop_label_x2)) }, singleLine = true)
+            OutlinedTextField(value = y2Text, onValueChange = { y2Text = it }, label = { Text(stringResource(R.string.tool_crop_label_y2)) }, singleLine = true)
             Button(onClick = {
                 val x1 = x1Text.toFloatOrNull() ?: 0f
                 val y1 = y1Text.toFloatOrNull() ?: 0f
                 val x2 = x2Text.toFloatOrNull() ?: 612f
                 val y2 = y2Text.toFloatOrNull() ?: 792f
                 viewModel.onCrop(context, x1, y1, x2, y2)
-            }) { Text("Crop") }
+            }) { Text(stringResource(R.string.tool_crop_action_crop)) }
         }
 
         if (state.resultPath != null) {
-            Button(onClick = { saveResult.launch("cropped.pdf") }) { Text("Save") }
+            Button(onClick = { saveResult.launch("cropped.pdf") }) { Text(stringResource(R.string.action_save)) }
         }
     }
 }

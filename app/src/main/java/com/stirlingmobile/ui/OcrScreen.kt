@@ -17,8 +17,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun OcrScreen(pipeline: PipelineState? = null, viewModel: OcrViewModel = viewModel()) {
@@ -48,10 +50,10 @@ fun OcrScreen(pipeline: PipelineState? = null, viewModel: OcrViewModel = viewMod
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("OCR (make PDF searchable)")
+        Text(stringResource(R.string.tool_ocr_title))
 
         Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.pdfPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.pdfPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         if (state.busy) {
@@ -60,14 +62,14 @@ fun OcrScreen(pipeline: PipelineState? = null, viewModel: OcrViewModel = viewMod
         Text(state.statusMessage)
 
         if (state.pdfPath != null && !state.busy) {
-            Button(onClick = { viewModel.runOcr(context) }) { Text("Run OCR") }
+            Button(onClick = { viewModel.runOcr(context) }) { Text(stringResource(R.string.tool_ocr_run_button)) }
         }
 
         if (state.resultPdfPath != null) {
-            Button(onClick = { savePdf.launch("searchable.pdf") }) { Text("Save searchable PDF") }
+            Button(onClick = { savePdf.launch("searchable.pdf") }) { Text(stringResource(R.string.tool_ocr_save_pdf_button)) }
         }
         if (state.extractedText != null) {
-            Button(onClick = { saveText.launch("ocr.txt") }) { Text("Export text (.txt)") }
+            Button(onClick = { saveText.launch("ocr.txt") }) { Text(stringResource(R.string.tool_ocr_export_text_button)) }
         }
     }
 }

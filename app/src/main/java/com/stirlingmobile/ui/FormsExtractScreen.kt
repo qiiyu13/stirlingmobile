@@ -17,8 +17,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun FormsExtractScreen(viewModel: FormsExtractViewModel = viewModel()) {
@@ -39,10 +41,10 @@ fun FormsExtractScreen(viewModel: FormsExtractViewModel = viewModel()) {
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Extract Form Data")
+        Text(stringResource(R.string.tool_forms_extract_title))
 
         Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-            Text("Select PDF")
+            Text(stringResource(R.string.action_select_pdf))
         }
 
         if (state.busy) {
@@ -51,17 +53,25 @@ fun FormsExtractScreen(viewModel: FormsExtractViewModel = viewModel()) {
         Text(state.statusMessage)
 
         if (state.fields.isNotEmpty()) {
-            Text("Fields:", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.tool_forms_extract_fields_label), style = MaterialTheme.typography.titleSmall)
             state.fields.forEach { field ->
-                Text("${field.name} (${field.fieldType}): ${field.value ?: "(empty)"} — page ${field.page}")
+                Text(
+                    stringResource(
+                        R.string.tool_forms_extract_field_row,
+                        field.name,
+                        field.fieldType,
+                        field.value ?: stringResource(R.string.tool_forms_extract_empty_value),
+                        field.page,
+                    )
+                )
             }
         }
 
         if (state.jsonText != null) {
-            Button(onClick = { saveJson.launch("form_data.json") }) { Text("Export JSON") }
+            Button(onClick = { saveJson.launch("form_data.json") }) { Text(stringResource(R.string.tool_forms_extract_export_json)) }
         }
         if (state.csvText != null) {
-            Button(onClick = { saveCsv.launch("form_data.csv") }) { Text("Export CSV") }
+            Button(onClick = { saveCsv.launch("form_data.csv") }) { Text(stringResource(R.string.tool_forms_extract_export_csv)) }
         }
     }
 }

@@ -1,20 +1,22 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stirlingmobile.R
 import uniffi.stirling_engine.contentAutoRedact
 import java.io.File
 import java.util.UUID
 
 data class AutoRedactUiState(
-    val statusMessage: String = "Select a PDF",
+    val statusMessage: String = "",
     val pdfPath: String? = null,
     val resultFilePath: String? = null,
 )
@@ -23,18 +25,20 @@ data class AutoRedactUiState(
 /// US phone, SSN, credit card) or a custom regex, and redacts every match
 /// the same way `content_redact` does (true content-stream removal, not an
 /// overlay).
-class AutoRedactViewModel : ViewModel() {
-    private val _state = MutableStateFlow(AutoRedactUiState())
+class AutoRedactViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        AutoRedactUiState(statusMessage = application.getString(R.string.tool_auto_redact_default_status))
+    )
     val state: StateFlow<AutoRedactUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = AutoRedactUiState(statusMessage = "Choose what to redact, then Redact.", pdfPath = path)
+        _state.value = AutoRedactUiState(statusMessage = getApplication<Application>().getString(R.string.tool_auto_redact_from_pipeline), pdfPath = path)
     }
 
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = AutoRedactUiState(statusMessage = "Reading…")
+            _state.value = AutoRedactUiState(statusMessage = context.getString(R.string.tool_auto_redact_status_reading))
             try {
                 val path = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -42,9 +46,9 @@ class AutoRedactViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = AutoRedactUiState(statusMessage = "Choose what to redact, then Redact.", pdfPath = path)
+                _state.value = AutoRedactUiState(statusMessage = context.getString(R.string.tool_auto_redact_status_choose), pdfPath = path)
             } catch (e: Exception) {
-                _state.value = AutoRedactUiState(statusMessage = "Failed to read: ${e.message}")
+                _state.value = AutoRedactUiState(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -54,7 +58,7 @@ class AutoRedactViewModel : ViewModel() {
         if (patterns.isEmpty()) return
 
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Scanning and redacting…")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.tool_auto_redact_status_scanning))
             val outputPath = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(pdfPath).parentFile!!
@@ -63,10 +67,10 @@ class AutoRedactViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Redaction failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.tool_auto_redact_error_failed, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Done. Ready to save.", resultFilePath = outputPath)
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_done_ready_to_save), resultFilePath = outputPath)
         }
     }
 
@@ -80,7 +84,7 @@ class AutoRedactViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = AutoRedactUiState(statusMessage = "Saved.")
+            _state.value = AutoRedactUiState(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

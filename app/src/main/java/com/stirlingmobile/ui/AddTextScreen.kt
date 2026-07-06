@@ -15,8 +15,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun AddTextScreen(pipeline: PipelineState? = null, viewModel: AddTextViewModel = viewModel()) {
@@ -30,7 +32,7 @@ fun AddTextScreen(pipeline: PipelineState? = null, viewModel: AddTextViewModel =
         }
     }
     LaunchedEffect(state.resultFilePath) {
-        state.resultFilePath?.let { pipeline?.push(it, "Added text") }
+        state.resultFilePath?.let { pipeline?.push(it, context.getString(R.string.tool_add_text_history_label)) }
     }
 
     val pickFile = rememberLauncherForActivityResult(
@@ -47,21 +49,21 @@ fun AddTextScreen(pipeline: PipelineState? = null, viewModel: AddTextViewModel =
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Add Text")
+        Text(stringResource(R.string.tool_add_text_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(if (state.inputPath == null) stringResource(R.string.action_select_pdf) else stringResource(R.string.action_select_different_pdf))
         }
 
         if (state.inputPath != null) {
-            OutlinedTextField(value = state.pageNumber, onValueChange = viewModel::onPageNumberChanged, label = { Text("Page number") })
-            OutlinedTextField(value = state.text, onValueChange = viewModel::onTextChanged, label = { Text("Text") })
-            OutlinedTextField(value = state.x, onValueChange = viewModel::onXChanged, label = { Text("X (points)") })
-            OutlinedTextField(value = state.y, onValueChange = viewModel::onYChanged, label = { Text("Y (points)") })
-            OutlinedTextField(value = state.fontSize, onValueChange = viewModel::onFontSizeChanged, label = { Text("Font size") })
+            OutlinedTextField(value = state.pageNumber, onValueChange = viewModel::onPageNumberChanged, label = { Text(stringResource(R.string.label_page_number)) })
+            OutlinedTextField(value = state.text, onValueChange = viewModel::onTextChanged, label = { Text(stringResource(R.string.tool_add_text_label_text)) })
+            OutlinedTextField(value = state.x, onValueChange = viewModel::onXChanged, label = { Text(stringResource(R.string.tool_add_text_label_x)) })
+            OutlinedTextField(value = state.y, onValueChange = viewModel::onYChanged, label = { Text(stringResource(R.string.tool_add_text_label_y)) })
+            OutlinedTextField(value = state.fontSize, onValueChange = viewModel::onFontSizeChanged, label = { Text(stringResource(R.string.tool_add_text_label_font_size)) })
 
             Button(onClick = { viewModel.onAddClicked() }) {
-                Text("Add Text")
+                Text(stringResource(R.string.tool_add_text_action_add))
             }
         }
 
@@ -69,7 +71,7 @@ fun AddTextScreen(pipeline: PipelineState? = null, viewModel: AddTextViewModel =
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("with_text.pdf") }) {
-                Text("Save PDF")
+                Text(stringResource(R.string.action_save_pdf))
             }
         }
     }

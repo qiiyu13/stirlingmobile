@@ -22,14 +22,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-
-private val NAMED_PATTERNS = listOf("email" to "Email addresses", "phone_us" to "US phone numbers", "ssn" to "SSNs", "credit_card" to "Credit card numbers")
+import com.stirlingmobile.R
 
 @Composable
 fun AutoRedactScreen(pipeline: PipelineState? = null, viewModel: AutoRedactViewModel = viewModel()) {
     val context = LocalContext.current
+    val namedPatterns = listOf(
+        "email" to stringResource(R.string.tool_auto_redact_pattern_email),
+        "phone_us" to stringResource(R.string.tool_auto_redact_pattern_phone_us),
+        "ssn" to stringResource(R.string.tool_auto_redact_pattern_ssn),
+        "credit_card" to stringResource(R.string.tool_auto_redact_pattern_credit_card),
+    )
     val state by viewModel.state.collectAsState()
     val pipelineCurrent = pipeline?.state?.collectAsState()?.value?.current
     LaunchedEffect(pipelineCurrent) {
@@ -38,7 +44,7 @@ fun AutoRedactScreen(pipeline: PipelineState? = null, viewModel: AutoRedactViewM
         }
     }
     LaunchedEffect(state.resultFilePath) {
-        state.resultFilePath?.let { pipeline?.push(it, "Auto-redacted") }
+        state.resultFilePath?.let { pipeline?.push(it, context.getString(R.string.tool_auto_redact_history_label)) }
     }
 
     val selected = remember { mutableStateOf(setOf<String>()) }
@@ -57,16 +63,16 @@ fun AutoRedactScreen(pipeline: PipelineState? = null, viewModel: AutoRedactViewM
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Auto-Redact PDF")
+        Text(stringResource(R.string.tool_auto_redact_title))
 
         Button(onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.pdfPath == null) "Select PDF" else "Select a different PDF")
+            Text(if (state.pdfPath == null) stringResource(R.string.action_select_pdf) else stringResource(R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
 
         if (state.pdfPath != null) {
-            NAMED_PATTERNS.forEach { (key, label) ->
+            namedPatterns.forEach { (key, label) ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Checkbox(
                         checked = selected.value.contains(key),
@@ -81,13 +87,13 @@ fun AutoRedactScreen(pipeline: PipelineState? = null, viewModel: AutoRedactViewM
             OutlinedTextField(
                 value = searchText,
                 onValueChange = { searchText = it },
-                label = { Text("Search for text (optional)") },
+                label = { Text(stringResource(R.string.tool_auto_redact_label_search_text)) },
             )
 
             OutlinedTextField(
                 value = customRegex,
                 onValueChange = { customRegex = it },
-                label = { Text("Advanced: custom regex (optional)") },
+                label = { Text(stringResource(R.string.tool_auto_redact_label_custom_regex)) },
             )
 
             Button(onClick = {
@@ -96,12 +102,12 @@ fun AutoRedactScreen(pipeline: PipelineState? = null, viewModel: AutoRedactViewM
                 if (customRegex.isNotBlank()) patterns.add("regex:${customRegex.trim()}")
                 viewModel.onRedactClicked(context, patterns)
             }) {
-                Text("Redact")
+                Text(stringResource(R.string.tool_auto_redact_action_redact))
             }
         }
 
         if (state.resultFilePath != null) {
-            Button(onClick = { saveResult.launch("redacted.pdf") }) { Text("Save PDF") }
+            Button(onClick = { saveResult.launch("redacted.pdf") }) { Text(stringResource(R.string.action_save_pdf)) }
         }
     }
 }

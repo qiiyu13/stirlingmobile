@@ -22,8 +22,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun WatermarkScreen(pipeline: PipelineState? = null, viewModel: WatermarkViewModel = viewModel()) {
@@ -60,30 +62,30 @@ fun WatermarkScreen(pipeline: PipelineState? = null, viewModel: WatermarkViewMod
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Add Watermark")
+        Text(stringResource(R.string.tool_watermark_title))
 
         Button(onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.pdfPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.pdfPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
         Text(state.statusMessage)
 
         if (state.pdfPath != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = !imageMode, onClick = { imageMode = false }, label = { Text("Text") })
-                FilterChip(selected = imageMode, onClick = { imageMode = true }, label = { Text("Image") })
+                FilterChip(selected = !imageMode, onClick = { imageMode = false }, label = { Text(stringResource(R.string.tool_watermark_mode_text)) })
+                FilterChip(selected = imageMode, onClick = { imageMode = true }, label = { Text(stringResource(R.string.tool_watermark_mode_image)) })
             }
 
             if (imageMode) {
                 Button(onClick = { pickImage.launch(arrayOf("image/*")) }) {
-                    Text(if (state.imagePath == null) "Select image" else "Select a different image")
+                    Text(stringResource(if (state.imagePath == null) R.string.tool_watermark_select_image else R.string.tool_watermark_select_different_image))
                 }
-                OutlinedTextField(widthFraction, { widthFraction = it }, label = { Text("Width (fraction of page, 0-1)") })
+                OutlinedTextField(widthFraction, { widthFraction = it }, label = { Text(stringResource(R.string.tool_watermark_width_label)) })
             } else {
-                OutlinedTextField(text, { text = it }, label = { Text("Watermark text") })
-                OutlinedTextField(fontSize, { fontSize = it }, label = { Text("Font size") })
+                OutlinedTextField(text, { text = it }, label = { Text(stringResource(R.string.tool_watermark_text_label)) })
+                OutlinedTextField(fontSize, { fontSize = it }, label = { Text(stringResource(R.string.tool_watermark_font_size_label)) })
             }
-            OutlinedTextField(rotation, { rotation = it }, label = { Text("Rotation (degrees)") })
-            OutlinedTextField(opacity, { opacity = it }, label = { Text("Opacity (0-1)") })
+            OutlinedTextField(rotation, { rotation = it }, label = { Text(stringResource(R.string.tool_watermark_rotation_label)) })
+            OutlinedTextField(opacity, { opacity = it }, label = { Text(stringResource(R.string.tool_watermark_opacity_label)) })
 
             Button(onClick = {
                 val rot = rotation.toFloatOrNull() ?: 0f
@@ -93,11 +95,11 @@ fun WatermarkScreen(pipeline: PipelineState? = null, viewModel: WatermarkViewMod
                 } else {
                     viewModel.applyText(text, fontSize.toFloatOrNull() ?: 36f, rot, op)
                 }
-            }) { Text("Apply") }
+            }) { Text(stringResource(R.string.tool_watermark_apply_action)) }
         }
 
         if (state.resultFilePath != null) {
-            Button(onClick = { saveResult.launch("watermarked.pdf") }) { Text("Save PDF") }
+            Button(onClick = { saveResult.launch("watermarked.pdf") }) { Text(stringResource(R.string.action_save_pdf)) }
         }
     }
 }

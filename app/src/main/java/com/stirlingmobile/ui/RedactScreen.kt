@@ -30,9 +30,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun RedactScreen(pipeline: PipelineState? = null, viewModel: RedactViewModel = viewModel()) {
@@ -60,19 +62,19 @@ fun RedactScreen(pipeline: PipelineState? = null, viewModel: RedactViewModel = v
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Redact PDF")
+        Text(stringResource(R.string.tool_redact_title))
 
         Button(onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.pdfPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.pdfPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
 
         if (state.pageImagePaths.size > 1) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { viewModel.onPageSelected((state.currentPage - 1).coerceAtLeast(0)) }) { Text("Prev") }
-                Text("Page ${state.currentPage + 1} / ${state.pageImagePaths.size}")
-                Button(onClick = { viewModel.onPageSelected((state.currentPage + 1).coerceAtMost(state.pageImagePaths.size - 1)) }) { Text("Next") }
+                Button(onClick = { viewModel.onPageSelected((state.currentPage - 1).coerceAtLeast(0)) }) { Text(stringResource(R.string.action_prev)) }
+                Text(stringResource(R.string.tool_redact_page_indicator, state.currentPage + 1, state.pageImagePaths.size))
+                Button(onClick = { viewModel.onPageSelected((state.currentPage + 1).coerceAtMost(state.pageImagePaths.size - 1)) }) { Text(stringResource(R.string.action_next)) }
             }
         }
 
@@ -86,17 +88,17 @@ fun RedactScreen(pipeline: PipelineState? = null, viewModel: RedactViewModel = v
 
         state.pending.forEachIndexed { index, r ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Page ${r.page}: ${r.width.toInt()}x${r.height.toInt()}pt")
-                Button(onClick = { viewModel.onRemovePending(index) }) { Text("Remove") }
+                Text(stringResource(R.string.tool_redact_pending_area, r.page.toInt(), r.width.toInt(), r.height.toInt()))
+                Button(onClick = { viewModel.onRemovePending(index) }) { Text(stringResource(R.string.action_remove)) }
             }
         }
 
         if (state.pending.isNotEmpty()) {
-            Button(onClick = { viewModel.onRedactClicked() }) { Text("Redact") }
+            Button(onClick = { viewModel.onRedactClicked() }) { Text(stringResource(R.string.tool_redact_action)) }
         }
 
         if (state.resultFilePath != null) {
-            Button(onClick = { saveResult.launch("redacted.pdf") }) { Text("Save PDF") }
+            Button(onClick = { saveResult.launch("redacted.pdf") }) { Text(stringResource(R.string.action_save_pdf)) }
         }
     }
 }

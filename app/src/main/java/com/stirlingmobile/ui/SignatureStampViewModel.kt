@@ -1,9 +1,11 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.stirlingmobile.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,16 +27,16 @@ data class SignatureStampUiState(
 /// Visual signature stamp: overlays a signature image onto one page. No
 /// cryptographic signing - see docs/09-security.md for the planned
 /// PKCS#12 security_sign/security_certify tools.
-class SignatureStampViewModel : ViewModel() {
+class SignatureStampViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(SignatureStampUiState())
     val state: StateFlow<SignatureStampUiState> = _state
 
     fun usePipelineFile(path: String) {
         viewModelScope.launch {
-            _state.value = SignatureStampUiState(statusMessage = "Reading…")
+            _state.value = SignatureStampUiState(statusMessage = getApplication<Application>().getString(R.string.status_reading))
             val pageCount = withContext(Dispatchers.IO) { getPageCount(path) }
             _state.value = SignatureStampUiState(
-                statusMessage = "$pageCount pages. Now select a signature image.",
+                statusMessage = getApplication<Application>().getString(R.string.tool_signature_stamp_page_count, pageCount.toString()),
                 pdfPath = path,
                 pageCount = pageCount,
             )
@@ -44,7 +46,7 @@ class SignatureStampViewModel : ViewModel() {
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = SignatureStampUiState(statusMessage = "Reading…")
+            _state.value = SignatureStampUiState(statusMessage = context.getString(R.string.status_reading))
             try {
                 val (path, pageCount) = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -53,12 +55,12 @@ class SignatureStampViewModel : ViewModel() {
                     input.absolutePath to getPageCount(input.absolutePath)
                 }
                 _state.value = SignatureStampUiState(
-                    statusMessage = "$pageCount pages. Now select a signature image.",
+                    statusMessage = context.getString(R.string.tool_signature_stamp_page_count, pageCount.toString()),
                     pdfPath = path,
                     pageCount = pageCount,
                 )
             } catch (e: Exception) {
-                _state.value = SignatureStampUiState(statusMessage = "Failed to read: ${e.message}")
+                _state.value = SignatureStampUiState(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -70,7 +72,7 @@ class SignatureStampViewModel : ViewModel() {
             val dest = File(workingDir, "stamp_signature.png")
             context.contentResolver.openInputStream(uri)!!.use { it.copyTo(dest.outputStream()) }
             _state.value = state.value.copy(
-                statusMessage = "Choose page and position, then Stamp.",
+                statusMessage = context.getString(R.string.tool_signature_stamp_choose_options),
                 signaturePath = dest.absolutePath,
             )
         }
@@ -81,7 +83,7 @@ class SignatureStampViewModel : ViewModel() {
         val signaturePath = state.value.signaturePath ?: return
 
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Stamping…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_signature_stamp_stamping_status))
             val outputPath = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(pdfPath).parentFile!!
@@ -90,10 +92,10 @@ class SignatureStampViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Stamp failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_signature_stamp_failed_status, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Done. Ready to save.", resultFilePath = outputPath)
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.status_done_ready_to_save), resultFilePath = outputPath)
         }
     }
 
@@ -107,7 +109,7 @@ class SignatureStampViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = SignatureStampUiState(statusMessage = "Saved.")
+            _state.value = SignatureStampUiState(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

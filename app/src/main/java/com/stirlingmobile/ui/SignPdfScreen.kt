@@ -20,9 +20,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun SignPdfScreen(pipeline: PipelineState? = null, viewModel: SignPdfViewModel = viewModel()) {
@@ -58,21 +60,21 @@ fun SignPdfScreen(pipeline: PipelineState? = null, viewModel: SignPdfViewModel =
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(if (certify) "Certify PDF (digital signature)" else "Sign PDF (digital signature)")
+        Text(stringResource(if (certify) R.string.tool_sign_pdf_title_certify else R.string.tool_sign_pdf_title_sign))
 
         Button(onClick = { certify = !certify }) {
-            Text(if (certify) "Switch to plain signature" else "Switch to certifying signature")
+            Text(stringResource(if (certify) R.string.tool_sign_pdf_switch_to_plain else R.string.tool_sign_pdf_switch_to_certifying))
         }
 
         Button(onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.pdfPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.pdfPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
 
         if (state.pdfPath != null) {
             Button(onClick = { pickPfx.launch(arrayOf("application/x-pkcs12", "*/*")) }) {
-                Text(if (state.pfxPath == null) "Select certificate (.pfx/.p12)" else "Select a different certificate")
+                Text(stringResource(if (state.pfxPath == null) R.string.tool_sign_pdf_select_certificate else R.string.tool_sign_pdf_select_different_certificate))
             }
         }
 
@@ -80,16 +82,16 @@ fun SignPdfScreen(pipeline: PipelineState? = null, viewModel: SignPdfViewModel =
             OutlinedTextField(
                 value = pfxPassword,
                 onValueChange = { pfxPassword = it },
-                label = { Text("Certificate password") },
+                label = { Text(stringResource(R.string.tool_sign_pdf_certificate_password_label)) },
                 visualTransformation = PasswordVisualTransformation()
             )
 
             if (certify) {
-                Text("Permission after certifying:")
+                Text(stringResource(R.string.tool_sign_pdf_permission_label))
                 val options = listOf(
-                    1.toUByte() to "No changes",
-                    2.toUByte() to "Form fill only",
-                    3.toUByte() to "Form fill + comments",
+                    1.toUByte() to stringResource(R.string.tool_sign_pdf_permission_no_changes),
+                    2.toUByte() to stringResource(R.string.tool_sign_pdf_permission_form_fill_only),
+                    3.toUByte() to stringResource(R.string.tool_sign_pdf_permission_form_fill_comments),
                 )
                 options.forEach { (value, label) ->
                     Button(onClick = { permission = value }) {
@@ -99,13 +101,13 @@ fun SignPdfScreen(pipeline: PipelineState? = null, viewModel: SignPdfViewModel =
             }
 
             Button(onClick = { viewModel.onSignClicked(pfxPassword, if (certify) permission else null) }) {
-                Text(if (certify) "Certify" else "Sign")
+                Text(stringResource(if (certify) R.string.tool_sign_pdf_action_certify else R.string.tool_sign_pdf_action_sign))
             }
         }
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("signed.pdf") }) {
-                Text("Save PDF")
+                Text(stringResource(R.string.action_save_pdf))
             }
         }
     }

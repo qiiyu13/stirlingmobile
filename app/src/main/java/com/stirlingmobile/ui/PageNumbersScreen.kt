@@ -23,8 +23,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 private val POSITIONS = listOf(
     "bottom-center", "bottom-left", "bottom-right", "top-center", "top-left", "top-right"
@@ -61,23 +63,24 @@ fun PageNumbersScreen(pipeline: PipelineState? = null, viewModel: PageNumbersVie
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Add Page Numbers")
+        Text(stringResource(R.string.tool_page_numbers_title))
 
         Button(onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.pdfPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.pdfPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
         Text(state.statusMessage)
 
         if (state.pdfPath != null) {
-            Text("Position")
+            Text(stringResource(R.string.tool_page_numbers_position_label))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 POSITIONS.forEach { p ->
+                    // ponytail: position id doubles as its own display label (bottom-center, top-left, …); not translated since it's also the value passed to the engine.
                     FilterChip(selected = position == p, onClick = { position = p }, label = { Text(p) })
                 }
             }
-            OutlinedTextField(format, { format = it }, label = { Text("Format ({n}, {total})") })
-            OutlinedTextField(startNumber, { startNumber = it }, label = { Text("Start number") })
-            OutlinedTextField(fontSize, { fontSize = it }, label = { Text("Font size") })
+            OutlinedTextField(format, { format = it }, label = { Text(stringResource(R.string.tool_page_numbers_format_label)) })
+            OutlinedTextField(startNumber, { startNumber = it }, label = { Text(stringResource(R.string.tool_page_numbers_start_label)) })
+            OutlinedTextField(fontSize, { fontSize = it }, label = { Text(stringResource(R.string.tool_page_numbers_font_size_label)) })
 
             Button(onClick = {
                 viewModel.apply(
@@ -86,11 +89,11 @@ fun PageNumbersScreen(pipeline: PipelineState? = null, viewModel: PageNumbersVie
                     startNumber.toUIntOrNull() ?: 1u,
                     fontSize.toFloatOrNull() ?: 12f,
                 )
-            }) { Text("Apply") }
+            }) { Text(stringResource(R.string.action_apply)) }
         }
 
         if (state.resultFilePath != null) {
-            Button(onClick = { saveResult.launch("numbered.pdf") }) { Text("Save PDF") }
+            Button(onClick = { saveResult.launch("numbered.pdf") }) { Text(stringResource(R.string.action_save_pdf)) }
         }
     }
 }

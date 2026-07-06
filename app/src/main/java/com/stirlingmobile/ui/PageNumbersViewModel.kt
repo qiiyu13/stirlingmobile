@@ -1,38 +1,40 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stirlingmobile.R
 import uniffi.stirling_engine.contentPageNumbers
 import java.io.File
 import java.util.UUID
 
 data class PageNumbersUiState(
-    val statusMessage: String = "Select a PDF",
+    val statusMessage: String,
     val pdfPath: String? = null,
     val resultFilePath: String? = null,
 )
 
 /// Stamp page numbers on every page (contentPageNumbers). Format uses {n} for
 /// the page number and {total} for the page count.
-class PageNumbersViewModel : ViewModel() {
-    private val _state = MutableStateFlow(PageNumbersUiState())
+class PageNumbersViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(PageNumbersUiState(statusMessage = application.getString(R.string.tool_page_numbers_select_prompt)))
     val state: StateFlow<PageNumbersUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = PageNumbersUiState(statusMessage = "Set options, then Apply.", pdfPath = path)
+        _state.value = PageNumbersUiState(statusMessage = getApplication<Application>().getString(R.string.tool_page_numbers_ready), pdfPath = path)
     }
 
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = PageNumbersUiState(statusMessage = "Reading…")
+            _state.value = PageNumbersUiState(statusMessage = context.getString(R.string.status_reading))
             try {
                 val path = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -40,9 +42,9 @@ class PageNumbersViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = PageNumbersUiState(statusMessage = "Set options, then Apply.", pdfPath = path)
+                _state.value = PageNumbersUiState(statusMessage = context.getString(R.string.tool_page_numbers_ready), pdfPath = path)
             } catch (e: Exception) {
-                _state.value = PageNumbersUiState(statusMessage = "Failed to read: ${e.message}")
+                _state.value = PageNumbersUiState(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -50,7 +52,7 @@ class PageNumbersViewModel : ViewModel() {
     fun apply(position: String, format: String, startNumber: UInt, fontSize: Float) {
         val pdfPath = state.value.pdfPath ?: return
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Numbering…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_page_numbers_numbering))
             val outputPath = try {
                 withContext(Dispatchers.IO) {
                     val output = File(File(pdfPath).parentFile!!, "page_numbers_result_${UUID.randomUUID()}.pdf")
@@ -58,10 +60,10 @@ class PageNumbersViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.error_failed, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Done. Ready to save.", resultFilePath = outputPath)
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.status_done_ready_to_save), resultFilePath = outputPath)
         }
     }
 
@@ -73,7 +75,7 @@ class PageNumbersViewModel : ViewModel() {
                     context.contentResolver.openOutputStream(destination, "wt")!!.use { output -> input.copyTo(output) }
                 }
             }
-            _state.value = state.value.copy(statusMessage = "Saved.")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

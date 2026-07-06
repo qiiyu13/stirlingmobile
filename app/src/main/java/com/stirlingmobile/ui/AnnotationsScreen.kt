@@ -16,8 +16,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun AnnotationsScreen(pipeline: PipelineState? = null, viewModel: AnnotationsViewModel = viewModel()) {
@@ -31,7 +33,7 @@ fun AnnotationsScreen(pipeline: PipelineState? = null, viewModel: AnnotationsVie
         }
     }
     LaunchedEffect(state.resultFilePath) {
-        state.resultFilePath?.let { pipeline?.push(it, "Added annotation") }
+        state.resultFilePath?.let { pipeline?.push(it, context.getString(R.string.tool_annotations_history_label)) }
     }
 
     val pickFile = rememberLauncherForActivityResult(
@@ -48,16 +50,17 @@ fun AnnotationsScreen(pipeline: PipelineState? = null, viewModel: AnnotationsVie
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Annotations")
+        Text(stringResource(R.string.tool_annotations_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(if (state.inputPath == null) stringResource(R.string.action_select_pdf) else stringResource(R.string.action_select_different_pdf))
         }
 
         if (state.inputPath != null) {
-            OutlinedTextField(value = state.pageNumber, onValueChange = viewModel::onPageNumberChanged, label = { Text("Page number") })
+            OutlinedTextField(value = state.pageNumber, onValueChange = viewModel::onPageNumberChanged, label = { Text(stringResource(R.string.label_page_number)) })
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // ponytail: "kind" doubles as the engine parameter and the on-screen label (highlight/underline/strikeout/note) — translating it needs a display-name map, not requested here.
                 listOf("highlight", "underline", "strikeout", "note").forEach { kind ->
                     Button(onClick = { viewModel.onKindSelected(kind) }) {
                         Text(if (state.kind == kind) "[$kind]" else kind)
@@ -65,16 +68,16 @@ fun AnnotationsScreen(pipeline: PipelineState? = null, viewModel: AnnotationsVie
                 }
             }
 
-            OutlinedTextField(value = state.x0, onValueChange = viewModel::onX0Changed, label = { Text("X0") })
-            OutlinedTextField(value = state.y0, onValueChange = viewModel::onY0Changed, label = { Text("Y0") })
-            OutlinedTextField(value = state.x1, onValueChange = viewModel::onX1Changed, label = { Text("X1") })
-            OutlinedTextField(value = state.y1, onValueChange = viewModel::onY1Changed, label = { Text("Y1") })
+            OutlinedTextField(value = state.x0, onValueChange = viewModel::onX0Changed, label = { Text(stringResource(R.string.tool_annotations_label_x0)) })
+            OutlinedTextField(value = state.y0, onValueChange = viewModel::onY0Changed, label = { Text(stringResource(R.string.tool_annotations_label_y0)) })
+            OutlinedTextField(value = state.x1, onValueChange = viewModel::onX1Changed, label = { Text(stringResource(R.string.tool_annotations_label_x1)) })
+            OutlinedTextField(value = state.y1, onValueChange = viewModel::onY1Changed, label = { Text(stringResource(R.string.tool_annotations_label_y1)) })
             if (state.kind == "note") {
-                OutlinedTextField(value = state.noteText, onValueChange = viewModel::onNoteTextChanged, label = { Text("Note text") })
+                OutlinedTextField(value = state.noteText, onValueChange = viewModel::onNoteTextChanged, label = { Text(stringResource(R.string.tool_annotations_label_note_text)) })
             }
 
             Button(onClick = { viewModel.onAddClicked() }) {
-                Text("Add Annotation")
+                Text(stringResource(R.string.tool_annotations_action_add))
             }
         }
 
@@ -82,7 +85,7 @@ fun AnnotationsScreen(pipeline: PipelineState? = null, viewModel: AnnotationsVie
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("annotated.pdf") }) {
-                Text("Save PDF")
+                Text(stringResource(R.string.action_save_pdf))
             }
         }
     }

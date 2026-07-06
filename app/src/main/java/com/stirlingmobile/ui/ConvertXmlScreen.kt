@@ -14,8 +14,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun ConvertXmlScreen(pipeline: PipelineState? = null, viewModel: ConvertXmlViewModel = viewModel()) {
@@ -43,23 +45,23 @@ fun ConvertXmlScreen(pipeline: PipelineState? = null, viewModel: ConvertXmlViewM
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("PDF to XML")
+        Text(stringResource(R.string.tool_convert_xml_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(if (state.inputPath == null) stringResource(R.string.action_select_pdf) else stringResource(R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
 
         if (state.inputPath != null) {
             Button(onClick = { viewModel.onConvertClicked() }) {
-                Text("Convert")
+                Text(stringResource(R.string.action_convert))
             }
         }
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("converted.xml") }) {
-                Text("Save XML")
+                Text(stringResource(R.string.tool_convert_xml_action_save))
             }
         }
     }

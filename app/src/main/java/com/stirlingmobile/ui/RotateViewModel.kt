@@ -1,9 +1,11 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.stirlingmobile.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,18 +21,18 @@ data class RotateUiState(
     val rotatedFilePath: String? = null,
 )
 
-class RotateViewModel : ViewModel() {
+class RotateViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(RotateUiState())
     val state: StateFlow<RotateUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = RotateUiState(statusMessage = "Choose rotation angle", inputPath = path)
+        _state.value = RotateUiState(statusMessage = getApplication<Application>().getString(R.string.tool_rotate_choose_angle), inputPath = path)
     }
 
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = RotateUiState(statusMessage = "Loading…")
+            _state.value = RotateUiState(statusMessage = context.getString(R.string.tool_rotate_loading))
             try {
                 val inputPath = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -38,9 +40,9 @@ class RotateViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = RotateUiState(statusMessage = "Choose rotation angle", inputPath = inputPath)
+                _state.value = RotateUiState(statusMessage = context.getString(R.string.tool_rotate_choose_angle), inputPath = inputPath)
             } catch (e: Exception) {
-                _state.value = RotateUiState(statusMessage = "Failed to read: ${e.message}")
+                _state.value = RotateUiState(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -48,7 +50,7 @@ class RotateViewModel : ViewModel() {
     fun onAngleChosen(angleDegrees: Int) {
         val inputPath = state.value.inputPath ?: return
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Rotating…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_rotate_rotating_status))
             val outputPath = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(inputPath).parentFile!!
@@ -57,10 +59,10 @@ class RotateViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Rotate failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_rotate_failed_status, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Rotated. Ready to save.", rotatedFilePath = outputPath)
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_rotate_done_status), rotatedFilePath = outputPath)
         }
     }
 
@@ -74,7 +76,7 @@ class RotateViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = RotateUiState(statusMessage = "Saved.")
+            _state.value = RotateUiState(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

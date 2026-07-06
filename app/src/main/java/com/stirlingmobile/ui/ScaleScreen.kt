@@ -19,8 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun ScaleScreen(pipeline: PipelineState? = null, viewModel: ScaleViewModel = viewModel()) {
@@ -45,8 +47,8 @@ fun ScaleScreen(pipeline: PipelineState? = null, viewModel: ScaleViewModel = vie
     }
 
     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Scale Pages")
-        Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) { Text("Select PDF") }
+        Text(stringResource(R.string.tool_scale_title))
+        Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) { Text(stringResource(R.string.action_select_pdf)) }
         if (state.busy) CircularProgressIndicator()
         Text(state.statusMessage)
 
@@ -54,17 +56,17 @@ fun ScaleScreen(pipeline: PipelineState? = null, viewModel: ScaleViewModel = vie
             OutlinedTextField(
                 value = scaleText,
                 onValueChange = { scaleText = it },
-                label = { Text("Scale factor (1.0 = original, 0.5 = half)") },
+                label = { Text(stringResource(R.string.tool_scale_input_label)) },
                 singleLine = true,
             )
             Button(onClick = {
                 val s = scaleText.toFloatOrNull() ?: 1.0f
                 viewModel.onScale(context, s, s)
-            }) { Text("Scale") }
+            }) { Text(stringResource(R.string.tool_scale_action)) }
         }
 
         if (state.resultPath != null) {
-            Button(onClick = { saveResult.launch("scaled.pdf") }) { Text("Save") }
+            Button(onClick = { saveResult.launch("scaled.pdf") }) { Text(stringResource(R.string.action_save)) }
         }
     }
 }

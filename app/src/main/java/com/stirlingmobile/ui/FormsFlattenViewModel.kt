@@ -1,8 +1,10 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import com.stirlingmobile.R
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,24 +16,26 @@ import java.io.File
 import java.util.UUID
 
 data class FormsFlattenUiState(
-    val statusMessage: String = "Select a PDF with form fields to flatten",
+    val statusMessage: String = "",
     val pdfPath: String? = null,
     val busy: Boolean = false,
     val resultPath: String? = null,
 )
 
-class FormsFlattenViewModel : ViewModel() {
-    private val _state = MutableStateFlow(FormsFlattenUiState())
+class FormsFlattenViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        FormsFlattenUiState(statusMessage = application.getString(R.string.tool_forms_flatten_default_status))
+    )
     val state: StateFlow<FormsFlattenUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = FormsFlattenUiState(statusMessage = "Ready. Tap Flatten.", pdfPath = path)
+        _state.value = FormsFlattenUiState(statusMessage = getApplication<Application>().getString(R.string.tool_forms_flatten_pipeline_ready), pdfPath = path)
     }
 
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = FormsFlattenUiState(statusMessage = "Reading…")
+            _state.value = FormsFlattenUiState(statusMessage = context.getString(R.string.status_reading))
             try {
                 val path = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -39,9 +43,9 @@ class FormsFlattenViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = FormsFlattenUiState(statusMessage = "Ready. Tap Flatten.", pdfPath = path)
+                _state.value = FormsFlattenUiState(statusMessage = context.getString(R.string.tool_forms_flatten_ready), pdfPath = path)
             } catch (e: Exception) {
-                _state.value = FormsFlattenUiState(statusMessage = "Failed: ${e.message}")
+                _state.value = FormsFlattenUiState(statusMessage = context.getString(R.string.error_generic_message, e.message))
             }
         }
     }
@@ -49,7 +53,7 @@ class FormsFlattenViewModel : ViewModel() {
     fun onFlatten(context: Context) {
         val pdfPath = _state.value.pdfPath ?: return
         viewModelScope.launch {
-            _state.value = _state.value.copy(busy = true, statusMessage = "Flattening…")
+            _state.value = _state.value.copy(busy = true, statusMessage = context.getString(R.string.tool_forms_flatten_flattening))
             try {
                 val resultPath = withContext(Dispatchers.IO) {
                     val workingDir = File(pdfPath).parentFile!!
@@ -59,11 +63,11 @@ class FormsFlattenViewModel : ViewModel() {
                 }
                 _state.value = _state.value.copy(
                     busy = false,
-                    statusMessage = "Flattened. Ready to save.",
+                    statusMessage = context.getString(R.string.tool_forms_flatten_ready_to_save),
                     resultPath = resultPath,
                 )
             } catch (e: Exception) {
-                _state.value = _state.value.copy(busy = false, statusMessage = "Failed: ${e.message}")
+                _state.value = _state.value.copy(busy = false, statusMessage = context.getString(R.string.error_generic_message, e.message))
             }
         }
     }
@@ -78,7 +82,7 @@ class FormsFlattenViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = _state.value.copy(statusMessage = "Saved.")
+            _state.value = _state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

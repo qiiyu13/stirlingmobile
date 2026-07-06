@@ -1,20 +1,22 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stirlingmobile.R
 import uniffi.stirling_engine.contentAddAnnotation
 import java.io.File
 import java.util.UUID
 
 data class AnnotationsUiState(
-    val statusMessage: String = "Select a PDF",
+    val statusMessage: String = "",
     val inputPath: String? = null,
     val pageNumber: String = "1",
     val kind: String = "highlight",
@@ -26,17 +28,19 @@ data class AnnotationsUiState(
     val resultFilePath: String? = null,
 )
 
-class AnnotationsViewModel : ViewModel() {
-    private val _state = MutableStateFlow(AnnotationsUiState())
+class AnnotationsViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        AnnotationsUiState(statusMessage = application.getString(R.string.tool_annotations_default_status))
+    )
     val state: StateFlow<AnnotationsUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = AnnotationsUiState(statusMessage = "From pipeline", inputPath = path)
+        _state.value = AnnotationsUiState(statusMessage = getApplication<Application>().getString(R.string.tool_annotations_from_pipeline), inputPath = path)
     }
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Loading…")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_loading))
             try {
                 val inputPath = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -44,9 +48,9 @@ class AnnotationsViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = state.value.copy(statusMessage = "Ready", inputPath = inputPath, resultFilePath = null)
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.status_ready), inputPath = inputPath, resultFilePath = null)
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed to read: ${e.message}")
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -69,7 +73,7 @@ class AnnotationsViewModel : ViewModel() {
         val kind = state.value.kind
         val noteText = state.value.noteText.ifBlank { null }
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Adding annotation…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_annotations_adding))
             val output = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(inputPath).parentFile!!
@@ -78,10 +82,10 @@ class AnnotationsViewModel : ViewModel() {
                     outputFile
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_annotations_error, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Annotation added", resultFilePath = output.absolutePath)
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_annotations_success), resultFilePath = output.absolutePath)
         }
     }
 
@@ -95,7 +99,7 @@ class AnnotationsViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = state.value.copy(statusMessage = "Saved.")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

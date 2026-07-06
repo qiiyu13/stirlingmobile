@@ -19,8 +19,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun FormsFillScreen(pipeline: PipelineState? = null, viewModel: FormsFillViewModel = viewModel()) {
@@ -47,10 +49,10 @@ fun FormsFillScreen(pipeline: PipelineState? = null, viewModel: FormsFillViewMod
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Fill Form Fields")
+        Text(stringResource(R.string.tool_forms_fill_title))
 
         Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-            Text("Select PDF")
+            Text(stringResource(R.string.action_select_pdf))
         }
 
         if (state.busy) {
@@ -64,16 +66,16 @@ fun FormsFillScreen(pipeline: PipelineState? = null, viewModel: FormsFillViewMod
                 OutlinedTextField(
                     value = currentValue,
                     onValueChange = { viewModel.onValueChanged(field.name, it) },
-                    label = { Text("${field.name} (${field.fieldType})") },
+                    label = { Text(stringResource(R.string.tool_forms_fill_field_label, field.name, field.fieldType)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
             }
-            Button(onClick = { viewModel.onFill(context) }) { Text("Fill & Save") }
+            Button(onClick = { viewModel.onFill(context) }) { Text(stringResource(R.string.tool_forms_fill_action)) }
         }
 
         if (state.resultPath != null) {
-            Button(onClick = { saveResult.launch("filled.pdf") }) { Text("Save filled PDF") }
+            Button(onClick = { saveResult.launch("filled.pdf") }) { Text(stringResource(R.string.tool_forms_fill_save)) }
         }
     }
 }

@@ -1,8 +1,10 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import com.stirlingmobile.R
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +19,7 @@ import java.io.File
 import java.util.UUID
 
 data class FormsFillUiState(
-    val statusMessage: String = "Select a PDF with form fields",
+    val statusMessage: String = "",
     val pdfPath: String? = null,
     val fields: List<FormField> = emptyList(),
     val fieldValues: Map<String, String> = emptyMap(),
@@ -25,17 +27,19 @@ data class FormsFillUiState(
     val resultPath: String? = null,
 )
 
-class FormsFillViewModel : ViewModel() {
-    private val _state = MutableStateFlow(FormsFillUiState())
+class FormsFillViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        FormsFillUiState(statusMessage = application.getString(R.string.tool_forms_fill_default_status))
+    )
     val state: StateFlow<FormsFillUiState> = _state
 
     fun usePipelineFile(path: String) {
         viewModelScope.launch {
-            _state.value = FormsFillUiState(statusMessage = "Reading form fields…", busy = true)
+            _state.value = FormsFillUiState(statusMessage = getApplication<Application>().getString(R.string.tool_forms_fill_reading), busy = true)
             val fields = withContext(Dispatchers.IO) { formsGetFields(path) }
             val initialValues = fields.associate { it.name to (it.value ?: "") }
             _state.value = FormsFillUiState(
-                statusMessage = "${fields.size} field(s) found. Edit values below.",
+                statusMessage = getApplication<Application>().getString(R.string.tool_forms_fill_found, fields.size),
                 pdfPath = path,
                 fields = fields,
                 fieldValues = initialValues,
@@ -46,7 +50,7 @@ class FormsFillViewModel : ViewModel() {
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = FormsFillUiState(statusMessage = "Reading form fields…", busy = true)
+            _state.value = FormsFillUiState(statusMessage = context.getString(R.string.tool_forms_fill_reading), busy = true)
             try {
                 val (path, fields) = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -57,13 +61,13 @@ class FormsFillViewModel : ViewModel() {
                 }
                 val initialValues = fields.associate { it.name to (it.value ?: "") }
                 _state.value = FormsFillUiState(
-                    statusMessage = "${fields.size} field(s) found. Edit values below.",
+                    statusMessage = context.getString(R.string.tool_forms_fill_found, fields.size),
                     pdfPath = path,
                     fields = fields,
                     fieldValues = initialValues,
                 )
             } catch (e: Exception) {
-                _state.value = FormsFillUiState(statusMessage = "Failed: ${e.message}")
+                _state.value = FormsFillUiState(statusMessage = context.getString(R.string.error_generic_message, e.message))
             }
         }
     }
@@ -77,7 +81,7 @@ class FormsFillViewModel : ViewModel() {
     fun onFill(context: Context) {
         val pdfPath = _state.value.pdfPath ?: return
         viewModelScope.launch {
-            _state.value = _state.value.copy(busy = true, statusMessage = "Filling fields…")
+            _state.value = _state.value.copy(busy = true, statusMessage = context.getString(R.string.tool_forms_fill_filling))
             try {
                 val resultPath = withContext(Dispatchers.IO) {
                     val workingDir = File(pdfPath).parentFile!!
@@ -90,11 +94,11 @@ class FormsFillViewModel : ViewModel() {
                 }
                 _state.value = _state.value.copy(
                     busy = false,
-                    statusMessage = "Filled. Ready to save.",
+                    statusMessage = context.getString(R.string.tool_forms_fill_ready_to_save),
                     resultPath = resultPath,
                 )
             } catch (e: Exception) {
-                _state.value = _state.value.copy(busy = false, statusMessage = "Failed: ${e.message}")
+                _state.value = _state.value.copy(busy = false, statusMessage = context.getString(R.string.error_generic_message, e.message))
             }
         }
     }
@@ -109,7 +113,7 @@ class FormsFillViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = _state.value.copy(statusMessage = "Saved.")
+            _state.value = _state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

@@ -1,39 +1,43 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stirlingmobile.R
 import uniffi.stirling_engine.PageComparison
 import uniffi.stirling_engine.toolCompare
 import java.io.File
 import java.util.UUID
 
 data class CompareUiState(
-    val statusMessage: String = "Select two PDFs to compare",
+    val statusMessage: String = "",
     val pathA: String? = null,
     val pathB: String? = null,
     val busy: Boolean = false,
     val results: List<PageComparison> = emptyList(),
 )
 
-class CompareViewModel : ViewModel() {
-    private val _state = MutableStateFlow(CompareUiState())
+class CompareViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        CompareUiState(statusMessage = application.getString(R.string.tool_compare_default_status))
+    )
     val state: StateFlow<CompareUiState> = _state
 
     fun onPickA(context: Context, uri: Uri) {
         val path = copyToWorking(context, uri, "compare_a.pdf")
-        _state.value = _state.value.copy(pathA = path, statusMessage = "PDF A ready.")
+        _state.value = _state.value.copy(pathA = path, statusMessage = context.getString(R.string.tool_compare_status_a_ready))
     }
 
     fun onPickB(context: Context, uri: Uri) {
         val path = copyToWorking(context, uri, "compare_b.pdf")
-        _state.value = _state.value.copy(pathB = path, statusMessage = "PDF B ready.")
+        _state.value = _state.value.copy(pathB = path, statusMessage = context.getString(R.string.tool_compare_status_b_ready))
     }
 
     private fun copyToWorking(context: Context, uri: Uri, name: String): String {
@@ -47,7 +51,7 @@ class CompareViewModel : ViewModel() {
         val pathA = _state.value.pathA ?: return
         val pathB = _state.value.pathB ?: return
         viewModelScope.launch {
-            _state.value = _state.value.copy(busy = true, statusMessage = "Comparing…")
+            _state.value = _state.value.copy(busy = true, statusMessage = context.getString(R.string.tool_compare_status_comparing))
             try {
                 val results = withContext(Dispatchers.IO) {
                     val workingDir = File(pathA).parentFile!!
@@ -57,11 +61,11 @@ class CompareViewModel : ViewModel() {
                 val diffCount = results.count { !it.identical }
                 _state.value = _state.value.copy(
                     busy = false,
-                    statusMessage = "Compared ${results.size} pages, $diffCount differ.",
+                    statusMessage = context.getString(R.string.tool_compare_status_result, results.size, diffCount),
                     results = results,
                 )
             } catch (e: Exception) {
-                _state.value = _state.value.copy(busy = false, statusMessage = "Failed: ${e.message}")
+                _state.value = _state.value.copy(busy = false, statusMessage = context.getString(R.string.error_generic_reason, e.message))
             }
         }
     }

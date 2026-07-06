@@ -15,8 +15,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun PdfaScreen(pipeline: PipelineState? = null, viewModel: PdfaViewModel = viewModel()) {
@@ -47,15 +49,16 @@ fun PdfaScreen(pipeline: PipelineState? = null, viewModel: PdfaViewModel = viewM
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Convert to PDF/A")
+        Text(stringResource(R.string.tool_pdfa_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.inputPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("1b", "2b", "3b").forEach { standard ->
                 Button(onClick = { viewModel.onStandardSelected(standard) }) {
+                    // ponytail: "1b"/"2b"/"3b" are PDF/A standard ids, not translatable copy — skipped.
                     Text(if (state.standard == standard) "[$standard]" else standard)
                 }
             }
@@ -65,20 +68,20 @@ fun PdfaScreen(pipeline: PipelineState? = null, viewModel: PdfaViewModel = viewM
 
         if (state.inputPath != null) {
             Button(onClick = { viewModel.onConvertClicked() }) {
-                Text("Convert")
+                Text(stringResource(R.string.tool_pdfa_convert_button))
             }
             Button(onClick = { viewModel.onValidateClicked() }) {
-                Text("Validate")
+                Text(stringResource(R.string.tool_pdfa_validate_button))
             }
         }
 
         state.validationErrors?.forEach { error ->
-            Text("• $error")
+            Text(stringResource(R.string.tool_pdfa_validation_error_bullet, error))
         }
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("converted_pdfa.pdf") }) {
-                Text("Save PDF/A")
+                Text(stringResource(R.string.tool_pdfa_save_button))
             }
         }
     }

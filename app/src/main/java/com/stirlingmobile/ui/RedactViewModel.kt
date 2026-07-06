@@ -1,9 +1,11 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import com.stirlingmobile.R
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +26,7 @@ const val REDACT_PREVIEW_DPI = 100
 data class PendingRedaction(val page: UInt, val x: Float, val y: Float, val width: Float, val height: Float)
 
 data class RedactUiState(
-    val statusMessage: String = "Select a PDF",
+    val statusMessage: String,
     val pdfPath: String? = null,
     val pageImagePaths: List<String> = emptyList(),
     val currentPage: Int = 0,
@@ -37,13 +39,13 @@ data class RedactUiState(
 /// from the PDF's content stream (not just an overlay) and paints a black
 /// box over the area. See docs/09-security.md for why "true removal" matters
 /// here, not just visual hiding.
-class RedactViewModel : ViewModel() {
-    private val _state = MutableStateFlow(RedactUiState())
+class RedactViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(RedactUiState(statusMessage = application.getString(R.string.tool_redact_select_pdf_default)))
     val state: StateFlow<RedactUiState> = _state
 
     fun usePipelineFile(context: Context, path: String) {
         viewModelScope.launch {
-            _state.value = RedactUiState(statusMessage = "Rendering preview…")
+            _state.value = RedactUiState(statusMessage = context.getString(R.string.tool_redact_rendering_preview))
             try {
                 val pages = withContext(Dispatchers.IO) {
                     val outputDir = File(File(path).parentFile, "redact_preview_${UUID.randomUUID()}").apply { mkdirs() }
@@ -55,12 +57,12 @@ class RedactViewModel : ViewModel() {
                     )
                 }
                 _state.value = RedactUiState(
-                    statusMessage = "Draw a box over anything to redact, then pick another page or Redact.",
+                    statusMessage = context.getString(R.string.tool_redact_draw_instructions),
                     pdfPath = path,
                     pageImagePaths = pages,
                 )
             } catch (e: Exception) {
-                _state.value = RedactUiState(statusMessage = "Failed to render preview: ${e.message}")
+                _state.value = RedactUiState(statusMessage = context.getString(R.string.error_failed_render_preview, e.message))
             }
         }
     }
@@ -68,7 +70,7 @@ class RedactViewModel : ViewModel() {
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = RedactUiState(statusMessage = "Rendering preview…")
+            _state.value = RedactUiState(statusMessage = context.getString(R.string.tool_redact_rendering_preview))
             try {
                 val (path, pages) = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -85,12 +87,12 @@ class RedactViewModel : ViewModel() {
                     input.absolutePath to pages
                 }
                 _state.value = RedactUiState(
-                    statusMessage = "Draw a box over anything to redact, then pick another page or Redact.",
+                    statusMessage = context.getString(R.string.tool_redact_draw_instructions),
                     pdfPath = path,
                     pageImagePaths = pages,
                 )
             } catch (e: Exception) {
-                _state.value = RedactUiState(statusMessage = "Failed to render preview: ${e.message}")
+                _state.value = RedactUiState(statusMessage = context.getString(R.string.error_failed_render_preview, e.message))
             }
         }
     }
@@ -131,7 +133,7 @@ class RedactViewModel : ViewModel() {
         if (state.value.pending.isEmpty()) return
 
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Redacting…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_redact_redacting_status))
             val outputPath = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(pdfPath).parentFile!!
@@ -141,10 +143,10 @@ class RedactViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Redaction failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_redact_failed_status, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Done. Ready to save.", resultFilePath = outputPath)
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_redact_done_status), resultFilePath = outputPath)
         }
     }
 
@@ -158,7 +160,7 @@ class RedactViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = RedactUiState(statusMessage = "Saved.")
+            _state.value = RedactUiState(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

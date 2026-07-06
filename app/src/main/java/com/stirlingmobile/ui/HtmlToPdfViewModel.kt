@@ -1,8 +1,10 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import com.stirlingmobile.R
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class HtmlToPdfUiState(
-    val statusMessage: String = "Select an HTML file to convert",
+    val statusMessage: String = "",
 )
 
 /// Renders HTML to PDF via Android's system print framework (PDFium under
@@ -25,23 +27,25 @@ data class HtmlToPdfUiState(
 /// enforcement can break at any OS update. Routing through the real
 /// PrintManager dialog (user picks "Save as PDF") is the only path that's
 /// actually part of the public API contract. See HtmlPrinter.
-class HtmlToPdfViewModel : ViewModel() {
-    private val _state = MutableStateFlow(HtmlToPdfUiState())
+class HtmlToPdfViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        HtmlToPdfUiState(statusMessage = application.getString(R.string.tool_html_to_pdf_default_status))
+    )
     val state: StateFlow<HtmlToPdfUiState> = _state
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch(Dispatchers.Main) {
-            _state.value = HtmlToPdfUiState(statusMessage = "Rendering…")
+            _state.value = HtmlToPdfUiState(statusMessage = context.getString(R.string.tool_html_to_pdf_rendering))
             try {
                 val html = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)!!.bufferedReader().use { it.readText() }
                 }
                 HtmlPrinter.printToPdf(context, html, "html_to_pdf")
             } catch (e: Exception) {
-                _state.value = HtmlToPdfUiState(statusMessage = "Failed: ${e.message}")
+                _state.value = HtmlToPdfUiState(statusMessage = context.getString(R.string.error_generic_message, e.message))
                 return@launch
             }
-            _state.value = HtmlToPdfUiState(statusMessage = "Choose \"Save as PDF\" in the print dialog to export.")
+            _state.value = HtmlToPdfUiState(statusMessage = context.getString(R.string.tool_html_to_pdf_choose_save))
         }
     }
 }

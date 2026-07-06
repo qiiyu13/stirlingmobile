@@ -1,9 +1,11 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.stirlingmobile.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,18 +22,18 @@ data class ScaleUiState(
     val resultPath: String? = null,
 )
 
-class ScaleViewModel : ViewModel() {
+class ScaleViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(ScaleUiState())
     val state: StateFlow<ScaleUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = ScaleUiState(statusMessage = "Ready.", inputPath = path)
+        _state.value = ScaleUiState(statusMessage = getApplication<Application>().getString(R.string.tool_scale_ready), inputPath = path)
     }
 
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = ScaleUiState(statusMessage = "Reading…")
+            _state.value = ScaleUiState(statusMessage = context.getString(R.string.status_reading))
             try {
                 val path = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -39,9 +41,9 @@ class ScaleViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = ScaleUiState(statusMessage = "Ready.", inputPath = path)
+                _state.value = ScaleUiState(statusMessage = context.getString(R.string.tool_scale_ready), inputPath = path)
             } catch (e: Exception) {
-                _state.value = ScaleUiState(statusMessage = "Failed: ${e.message}")
+                _state.value = ScaleUiState(statusMessage = context.getString(R.string.error_failed, e.message))
             }
         }
     }
@@ -49,7 +51,7 @@ class ScaleViewModel : ViewModel() {
     fun onScale(context: Context, scaleX: Float, scaleY: Float) {
         val inputPath = _state.value.inputPath ?: return
         viewModelScope.launch {
-            _state.value = _state.value.copy(busy = true, statusMessage = "Scaling…")
+            _state.value = _state.value.copy(busy = true, statusMessage = context.getString(R.string.tool_scale_scaling))
             try {
                 val resultPath = withContext(Dispatchers.IO) {
                     val workingDir = File(inputPath).parentFile!!
@@ -58,10 +60,10 @@ class ScaleViewModel : ViewModel() {
                     output.absolutePath
                 }
                 _state.value = _state.value.copy(
-                    busy = false, statusMessage = "Done. Ready to save.", resultPath = resultPath
+                    busy = false, statusMessage = context.getString(R.string.status_done_ready_to_save), resultPath = resultPath
                 )
             } catch (e: Exception) {
-                _state.value = _state.value.copy(busy = false, statusMessage = "Failed: ${e.message}")
+                _state.value = _state.value.copy(busy = false, statusMessage = context.getString(R.string.error_failed, e.message))
             }
         }
     }
@@ -76,7 +78,7 @@ class ScaleViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = _state.value.copy(statusMessage = "Saved.")
+            _state.value = _state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

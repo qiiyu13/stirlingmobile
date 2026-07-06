@@ -1,9 +1,11 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
+import com.stirlingmobile.R
 import androidx.compose.ui.geometry.Offset
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,24 +23,26 @@ import java.util.UUID
 data class CanvasStroke(val points: List<Offset>)
 
 data class DrawUiState(
-    val statusMessage: String = "Select a PDF",
+    val statusMessage: String = "",
     val inputPath: String? = null,
     val pageNumber: String = "1",
     val strokes: List<CanvasStroke> = emptyList(),
     val resultFilePath: String? = null,
 )
 
-class DrawViewModel : ViewModel() {
-    private val _state = MutableStateFlow(DrawUiState())
+class DrawViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        DrawUiState(statusMessage = application.getString(R.string.tool_draw_default_status))
+    )
     val state: StateFlow<DrawUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = DrawUiState(statusMessage = "From pipeline", inputPath = path)
+        _state.value = DrawUiState(statusMessage = getApplication<Application>().getString(R.string.tool_draw_from_pipeline), inputPath = path)
     }
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Loading…")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_loading))
             try {
                 val inputPath = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -46,9 +50,9 @@ class DrawViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = state.value.copy(statusMessage = "Draw on the canvas below", inputPath = inputPath, resultFilePath = null, strokes = emptyList())
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.tool_draw_canvas_ready), inputPath = inputPath, resultFilePath = null, strokes = emptyList())
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed to read: ${e.message}")
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.error_read_failed, e.message))
             }
         }
     }
@@ -74,7 +78,7 @@ class DrawViewModel : ViewModel() {
         val strokes = state.value.strokes
         if (strokes.isEmpty() || canvasWidth <= 0f || canvasHeight <= 0f) return
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Drawing…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_draw_drawing))
             val output = try {
                 withContext(Dispatchers.IO) {
                     val pageSize = pdfPageSize(inputPath, pageNumber)
@@ -96,10 +100,10 @@ class DrawViewModel : ViewModel() {
                     outputFile
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_draw_error, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Drawing applied", resultFilePath = output.absolutePath)
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_draw_success), resultFilePath = output.absolutePath)
         }
     }
 
@@ -113,7 +117,7 @@ class DrawViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = state.value.copy(statusMessage = "Saved.")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

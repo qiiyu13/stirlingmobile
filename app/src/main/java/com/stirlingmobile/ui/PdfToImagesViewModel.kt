@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.stirlingmobile.R
 import uniffi.stirling_engine.convertPdfToImages
 import java.io.File
 import java.util.UUID
@@ -24,7 +25,7 @@ class PdfToImagesViewModel : ViewModel() {
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = PdfToImagesUiState(statusMessage = "Rendering pages…")
+            _state.value = PdfToImagesUiState(statusMessage = context.getString(R.string.tool_pdf_to_images_rendering))
             val outputs = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -40,10 +41,10 @@ class PdfToImagesViewModel : ViewModel() {
                     )
                 }
             } catch (e: Exception) {
-                _state.value = PdfToImagesUiState(statusMessage = "Failed: ${e.message}")
+                _state.value = PdfToImagesUiState(statusMessage = context.getString(R.string.error_failed, e.message))
                 return@launch
             }
-            _state.value = PdfToImagesUiState(statusMessage = "Rendered ${outputs.size} pages. Ready to save.", resultPaths = outputs)
+            _state.value = PdfToImagesUiState(statusMessage = context.getString(R.string.tool_pdf_to_images_rendered, outputs.size), resultPaths = outputs)
         }
     }
 
@@ -62,7 +63,7 @@ class PdfToImagesViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = PdfToImagesUiState(statusMessage = "Saved ${paths.size} pages.")
+            _state.value = PdfToImagesUiState(statusMessage = context.getString(R.string.tool_pdf_to_images_saved, paths.size))
         }
     }
 }

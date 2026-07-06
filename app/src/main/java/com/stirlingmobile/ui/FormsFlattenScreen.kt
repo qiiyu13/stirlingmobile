@@ -17,8 +17,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun FormsFlattenScreen(pipeline: PipelineState? = null, viewModel: FormsFlattenViewModel = viewModel()) {
@@ -45,10 +47,10 @@ fun FormsFlattenScreen(pipeline: PipelineState? = null, viewModel: FormsFlattenV
         modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Flatten Form Fields")
+        Text(stringResource(R.string.tool_forms_flatten_title))
 
         Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-            Text("Select PDF")
+            Text(stringResource(R.string.action_select_pdf))
         }
 
         if (state.busy) {
@@ -57,11 +59,11 @@ fun FormsFlattenScreen(pipeline: PipelineState? = null, viewModel: FormsFlattenV
         Text(state.statusMessage)
 
         if (state.pdfPath != null && !state.busy) {
-            Button(onClick = { viewModel.onFlatten(context) }) { Text("Flatten") }
+            Button(onClick = { viewModel.onFlatten(context) }) { Text(stringResource(R.string.tool_forms_flatten_action)) }
         }
 
         if (state.resultPath != null) {
-            Button(onClick = { saveResult.launch("flattened.pdf") }) { Text("Save flattened PDF") }
+            Button(onClick = { saveResult.launch("flattened.pdf") }) { Text(stringResource(R.string.tool_forms_flatten_save)) }
         }
     }
 }

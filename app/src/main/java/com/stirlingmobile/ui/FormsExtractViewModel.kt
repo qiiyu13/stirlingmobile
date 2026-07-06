@@ -1,8 +1,10 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import com.stirlingmobile.R
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,20 +17,22 @@ import uniffi.stirling_engine.formsGetFields
 import java.io.File
 
 data class FormsExtractUiState(
-    val statusMessage: String = "Select a PDF to extract form data",
+    val statusMessage: String = "",
     val fields: List<FormField> = emptyList(),
     val busy: Boolean = false,
     val jsonText: String? = null,
     val csvText: String? = null,
 )
 
-class FormsExtractViewModel : ViewModel() {
-    private val _state = MutableStateFlow(FormsExtractUiState())
+class FormsExtractViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        FormsExtractUiState(statusMessage = application.getString(R.string.tool_forms_extract_default_status))
+    )
     val state: StateFlow<FormsExtractUiState> = _state
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = FormsExtractUiState(busy = true, statusMessage = "Extracting fields…")
+            _state.value = FormsExtractUiState(busy = true, statusMessage = context.getString(R.string.tool_forms_extract_extracting))
             try {
                 val fields = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -39,13 +43,13 @@ class FormsExtractViewModel : ViewModel() {
                 val json = buildJson(fields)
                 val csv = buildCsv(fields)
                 _state.value = FormsExtractUiState(
-                    statusMessage = "${fields.size} field(s) found.",
+                    statusMessage = context.getString(R.string.tool_forms_extract_found, fields.size),
                     fields = fields,
                     jsonText = json,
                     csvText = csv,
                 )
             } catch (e: Exception) {
-                _state.value = FormsExtractUiState(statusMessage = "Failed: ${e.message}")
+                _state.value = FormsExtractUiState(statusMessage = context.getString(R.string.error_generic_message, e.message))
             }
         }
     }
@@ -56,7 +60,7 @@ class FormsExtractViewModel : ViewModel() {
             withContext(Dispatchers.IO) {
                 context.contentResolver.openOutputStream(destination, "wt")!!.use { it.write(json.toByteArray()) }
             }
-            _state.value = _state.value.copy(statusMessage = "Saved JSON.")
+            _state.value = _state.value.copy(statusMessage = context.getString(R.string.tool_forms_extract_saved_json))
         }
     }
 
@@ -66,7 +70,7 @@ class FormsExtractViewModel : ViewModel() {
             withContext(Dispatchers.IO) {
                 context.contentResolver.openOutputStream(destination, "wt")!!.use { it.write(csv.toByteArray()) }
             }
-            _state.value = _state.value.copy(statusMessage = "Saved CSV.")
+            _state.value = _state.value.copy(statusMessage = context.getString(R.string.tool_forms_extract_saved_csv))
         }
     }
 

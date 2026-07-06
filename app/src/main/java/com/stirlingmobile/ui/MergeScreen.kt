@@ -14,8 +14,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun MergeScreen(pipeline: PipelineState? = null, viewModel: MergeViewModel = viewModel()) {
@@ -41,17 +43,17 @@ fun MergeScreen(pipeline: PipelineState? = null, viewModel: MergeViewModel = vie
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Merge PDFs")
+        Text(stringResource(R.string.tool_merge_title))
 
         Button(onClick = { pickFiles.launch(arrayOf("application/pdf")) }) {
-            Text("Select PDFs")
+            Text(stringResource(R.string.tool_merge_input_label))
         }
 
         Text(state.statusMessage)
 
         if (state.mergedFilePath != null) {
             Button(onClick = { saveResult.launch("merged.pdf") }) {
-                Text("Save merged PDF")
+                Text(stringResource(R.string.tool_merge_save_button))
             }
         }
     }

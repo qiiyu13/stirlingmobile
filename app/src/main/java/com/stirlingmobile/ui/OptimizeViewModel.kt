@@ -1,33 +1,35 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stirlingmobile.R
 import uniffi.stirling_engine.optimizeLossless
 import java.io.File
 import java.util.UUID
 
 data class OptimizeUiState(
-    val statusMessage: String = "Select a PDF",
+    val statusMessage: String,
     val inputPath: String? = null,
     val originalSizeBytes: Long? = null,
     val resultFilePath: String? = null,
     val resultSizeBytes: Long? = null,
 )
 
-class OptimizeViewModel : ViewModel() {
-    private val _state = MutableStateFlow(OptimizeUiState())
+class OptimizeViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(OptimizeUiState(statusMessage = application.getString(R.string.tool_optimize_select_prompt)))
     val state: StateFlow<OptimizeUiState> = _state
 
     fun usePipelineFile(path: String) {
         _state.value = OptimizeUiState(
-            statusMessage = "From pipeline: ${formatSize(File(path).length())}",
+            statusMessage = getApplication<Application>().getString(R.string.tool_optimize_from_pipeline, formatSize(File(path).length())),
             inputPath = path,
             originalSizeBytes = File(path).length(),
         )
@@ -35,7 +37,7 @@ class OptimizeViewModel : ViewModel() {
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = OptimizeUiState(statusMessage = "Loading…")
+            _state.value = OptimizeUiState(statusMessage = context.getString(R.string.tool_optimize_loading))
             try {
                 val (inputPath, size) = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -44,12 +46,12 @@ class OptimizeViewModel : ViewModel() {
                     input.absolutePath to input.length()
                 }
                 _state.value = OptimizeUiState(
-                    statusMessage = "Original size: ${formatSize(size)}",
+                    statusMessage = context.getString(R.string.tool_optimize_original_size, formatSize(size)),
                     inputPath = inputPath,
                     originalSizeBytes = size,
                 )
             } catch (e: Exception) {
-                _state.value = OptimizeUiState(statusMessage = "Failed to read: ${e.message}")
+                _state.value = OptimizeUiState(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -57,7 +59,7 @@ class OptimizeViewModel : ViewModel() {
     fun onOptimizeClicked() {
         val inputPath = state.value.inputPath ?: return
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Optimizing…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_optimize_optimizing))
             val output = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(inputPath).parentFile!!
@@ -66,11 +68,15 @@ class OptimizeViewModel : ViewModel() {
                     outputFile
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Optimize failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_optimize_failed, e.message))
                 return@launch
             }
             _state.value = state.value.copy(
-                statusMessage = "Optimized: ${formatSize(output.length())} (was ${formatSize(state.value.originalSizeBytes ?: 0)})",
+                statusMessage = getApplication<Application>().getString(
+                    R.string.tool_optimize_result,
+                    formatSize(output.length()),
+                    formatSize(state.value.originalSizeBytes ?: 0),
+                ),
                 resultFilePath = output.absolutePath,
                 resultSizeBytes = output.length(),
             )
@@ -87,7 +93,7 @@ class OptimizeViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = OptimizeUiState(statusMessage = "Saved.")
+            _state.value = OptimizeUiState(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

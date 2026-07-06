@@ -13,8 +13,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun PdfToImagesScreen(viewModel: PdfToImagesViewModel = viewModel()) {
@@ -33,17 +35,17 @@ fun PdfToImagesScreen(viewModel: PdfToImagesViewModel = viewModel()) {
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("PDF to Images")
+        Text(stringResource(R.string.tool_pdf_to_images_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text("Select PDF")
+            Text(stringResource(R.string.action_select_pdf))
         }
 
         Text(state.statusMessage)
 
         if (state.resultPaths.isNotEmpty()) {
             Button(onClick = { pickSaveDir.launch(null) }) {
-                Text("Save pages to folder")
+                Text(stringResource(R.string.tool_pdf_to_images_save_button))
             }
         }
     }

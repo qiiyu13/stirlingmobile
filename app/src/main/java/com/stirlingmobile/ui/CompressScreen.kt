@@ -24,8 +24,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun CompressScreen(pipeline: PipelineState? = null, viewModel: CompressViewModel = viewModel()) {
@@ -38,7 +40,7 @@ fun CompressScreen(pipeline: PipelineState? = null, viewModel: CompressViewModel
         }
     }
     LaunchedEffect(state.resultFilePath) {
-        state.resultFilePath?.let { pipeline?.push(it, "Compressed") }
+        state.resultFilePath?.let { pipeline?.push(it, context.getString(R.string.tool_compress_history_label)) }
     }
 
     var quality by remember { mutableFloatStateOf(54f) }
@@ -61,10 +63,10 @@ fun CompressScreen(pipeline: PipelineState? = null, viewModel: CompressViewModel
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Compress PDF")
+        Text(stringResource(R.string.tool_compress_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(if (state.inputPath == null) stringResource(R.string.action_select_pdf) else stringResource(R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
@@ -73,39 +75,39 @@ fun CompressScreen(pipeline: PipelineState? = null, viewModel: CompressViewModel
             val clipboard = context.getSystemService(ClipboardManager::class.java)
             clipboard.setPrimaryClip(ClipData.newPlainText("log", state.statusMessage))
         }) {
-            Text("Copy log")
+            Text(stringResource(R.string.tool_compress_action_copy_log))
         }
 
         if (state.inputPath != null) {
             Button(onClick = { viewModel.onDiagnoseClicked() }) {
-                Text("Diagnose images (debug)")
+                Text(stringResource(R.string.tool_compress_action_diagnose))
             }
 
-            Text("JPEG quality: ${quality.toInt()} (1 = smallest/worst, 100 = best/largest)")
+            Text(stringResource(R.string.tool_compress_label_jpeg_quality, quality.toInt()))
             Slider(value = quality, onValueChange = { quality = it }, valueRange = 1f..100f)
 
-            Text("Image scale: ${scalePercent.toInt()}% of original resolution")
+            Text(stringResource(R.string.tool_compress_label_image_scale, scalePercent.toInt()))
             Slider(value = scalePercent, onValueChange = { scalePercent = it }, valueRange = 10f..100f)
 
             Button(onClick = { viewModel.onCompressCustom(quality.toInt(), scalePercent.toInt()) }) {
-                Text("Compress")
+                Text(stringResource(R.string.tool_compress_action_compress))
             }
 
             OutlinedTextField(
                 value = targetMbText,
                 onValueChange = { targetMbText = it },
-                label = { Text("Or target size (MB)") }
+                label = { Text(stringResource(R.string.tool_compress_label_target_size)) }
             )
             Button(onClick = {
                 targetMbText.toDoubleOrNull()?.let { viewModel.onCompressToTargetSize(it) }
             }) {
-                Text("Compress to target size")
+                Text(stringResource(R.string.tool_compress_action_compress_target))
             }
         }
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("compressed.pdf") }) {
-                Text("Save compressed PDF")
+                Text(stringResource(R.string.tool_compress_action_save_compressed))
             }
         }
     }

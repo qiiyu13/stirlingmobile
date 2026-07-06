@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.stirlingmobile.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +29,7 @@ class SplitViewModel : ViewModel() {
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = SplitUiState(statusMessage = "Reading…")
+            _state.value = SplitUiState(statusMessage = context.getString(R.string.status_reading))
             try {
                 val (inputPath, pageCount) = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -37,12 +38,12 @@ class SplitViewModel : ViewModel() {
                     input.absolutePath to getPageCount(input.absolutePath)
                 }
                 _state.value = SplitUiState(
-                    statusMessage = "$pageCount pages. Enter split points.",
+                    statusMessage = context.getString(R.string.tool_split_page_count, pageCount.toString()),
                     inputPath = inputPath,
                     pageCount = pageCount,
                 )
             } catch (e: Exception) {
-                _state.value = SplitUiState(statusMessage = "Failed to read: ${e.message}")
+                _state.value = SplitUiState(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -54,7 +55,7 @@ class SplitViewModel : ViewModel() {
             .mapNotNull { it.trim().toUIntOrNull() }
 
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Splitting…")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.tool_split_splitting))
             val outputs = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -62,11 +63,11 @@ class SplitViewModel : ViewModel() {
                     splitPdf(inputPath, splitAfterPages, outputDir.absolutePath)
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Split failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.tool_split_failed, e.message))
                 return@launch
             }
             _state.value = state.value.copy(
-                statusMessage = "Split into ${outputs.size} files. Ready to save.",
+                statusMessage = context.getString(R.string.tool_split_result, outputs.size),
                 outputPaths = outputs,
             )
         }
@@ -87,7 +88,7 @@ class SplitViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = SplitUiState(statusMessage = "Saved ${paths.size} files.")
+            _state.value = SplitUiState(statusMessage = context.getString(R.string.tool_split_saved, paths.size))
         }
     }
 }

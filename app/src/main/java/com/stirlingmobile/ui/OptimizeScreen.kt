@@ -14,8 +14,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun OptimizeScreen(pipeline: PipelineState? = null, viewModel: OptimizeViewModel = viewModel()) {
@@ -46,23 +48,23 @@ fun OptimizeScreen(pipeline: PipelineState? = null, viewModel: OptimizeViewModel
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Optimize PDF (lossless)")
+        Text(stringResource(R.string.tool_optimize_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.inputPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
 
         if (state.inputPath != null) {
             Button(onClick = { viewModel.onOptimizeClicked() }) {
-                Text("Optimize")
+                Text(stringResource(R.string.tool_optimize_button))
             }
         }
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("optimized.pdf") }) {
-                Text("Save optimized PDF")
+                Text(stringResource(R.string.tool_optimize_save_button))
             }
         }
     }

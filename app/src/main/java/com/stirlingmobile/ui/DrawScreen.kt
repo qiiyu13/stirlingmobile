@@ -26,8 +26,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun DrawScreen(pipeline: PipelineState? = null, viewModel: DrawViewModel = viewModel()) {
@@ -62,14 +64,14 @@ fun DrawScreen(pipeline: PipelineState? = null, viewModel: DrawViewModel = viewM
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Draw on PDF")
+        Text(stringResource(R.string.tool_draw_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.inputPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         if (state.inputPath != null) {
-            OutlinedTextField(value = state.pageNumber, onValueChange = viewModel::onPageNumberChanged, label = { Text("Page number") })
+            OutlinedTextField(value = state.pageNumber, onValueChange = viewModel::onPageNumberChanged, label = { Text(stringResource(R.string.tool_draw_page_number_label)) })
 
             Canvas(
                 modifier = Modifier
@@ -105,10 +107,10 @@ fun DrawScreen(pipeline: PipelineState? = null, viewModel: DrawViewModel = viewM
             }
 
             Button(onClick = { viewModel.onClearClicked() }) {
-                Text("Clear")
+                Text(stringResource(R.string.action_clear))
             }
             Button(onClick = { viewModel.onApplyClicked(canvasWidth, canvasHeight) }) {
-                Text("Apply to PDF")
+                Text(stringResource(R.string.tool_draw_apply))
             }
         }
 
@@ -116,7 +118,7 @@ fun DrawScreen(pipeline: PipelineState? = null, viewModel: DrawViewModel = viewM
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("drawn.pdf") }) {
-                Text("Save PDF")
+                Text(stringResource(R.string.action_save_pdf))
             }
         }
     }

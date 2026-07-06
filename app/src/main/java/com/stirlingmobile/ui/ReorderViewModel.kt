@@ -1,8 +1,10 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import com.stirlingmobile.R
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,22 +24,26 @@ data class ReorderUiState(
     val resultPath: String? = null,
 )
 
-class ReorderViewModel : ViewModel() {
+class ReorderViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(ReorderUiState())
     val state: StateFlow<ReorderUiState> = _state
 
     fun usePipelineFile(path: String) {
         viewModelScope.launch {
-            _state.value = ReorderUiState(statusMessage = "Reading…")
+            _state.value = ReorderUiState(statusMessage = getApplication<Application>().getString(R.string.status_reading))
             val count = withContext(Dispatchers.IO) { getPageCount(path) }
-            _state.value = ReorderUiState(statusMessage = "$count pages. Enter new order.", inputPath = path, pageCount = count)
+            _state.value = ReorderUiState(
+                statusMessage = getApplication<Application>().getString(R.string.tool_reorder_page_count, count.toString()),
+                inputPath = path,
+                pageCount = count,
+            )
         }
     }
 
 
     fun onPdfPicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = ReorderUiState(statusMessage = "Reading…")
+            _state.value = ReorderUiState(statusMessage = context.getString(R.string.status_reading))
             try {
                 val (path, count) = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -46,12 +52,12 @@ class ReorderViewModel : ViewModel() {
                     input.absolutePath to getPageCount(input.absolutePath)
                 }
                 _state.value = ReorderUiState(
-                    statusMessage = "$count pages. Enter new order.",
+                    statusMessage = context.getString(R.string.tool_reorder_page_count, count.toString()),
                     inputPath = path,
                     pageCount = count,
                 )
             } catch (e: Exception) {
-                _state.value = ReorderUiState(statusMessage = "Failed: ${e.message}")
+                _state.value = ReorderUiState(statusMessage = context.getString(R.string.error_failed, e.message))
             }
         }
     }
@@ -62,7 +68,7 @@ class ReorderViewModel : ViewModel() {
         if (order.isEmpty()) return
 
         viewModelScope.launch {
-            _state.value = _state.value.copy(busy = true, statusMessage = "Reordering…")
+            _state.value = _state.value.copy(busy = true, statusMessage = context.getString(R.string.tool_reorder_reordering))
             try {
                 val resultPath = withContext(Dispatchers.IO) {
                     val workingDir = File(inputPath).parentFile!!
@@ -71,10 +77,10 @@ class ReorderViewModel : ViewModel() {
                     output.absolutePath
                 }
                 _state.value = _state.value.copy(
-                    busy = false, statusMessage = "Done. Ready to save.", resultPath = resultPath
+                    busy = false, statusMessage = context.getString(R.string.status_done_ready_to_save), resultPath = resultPath
                 )
             } catch (e: Exception) {
-                _state.value = _state.value.copy(busy = false, statusMessage = "Failed: ${e.message}")
+                _state.value = _state.value.copy(busy = false, statusMessage = context.getString(R.string.error_failed, e.message))
             }
         }
     }
@@ -89,7 +95,7 @@ class ReorderViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = _state.value.copy(statusMessage = "Saved.")
+            _state.value = _state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

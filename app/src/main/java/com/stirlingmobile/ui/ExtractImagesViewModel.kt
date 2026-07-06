@@ -1,9 +1,11 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
+import com.stirlingmobile.R
 import androidx.documentfile.provider.DocumentFile
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,22 +17,24 @@ import java.io.File
 import java.util.UUID
 
 data class ExtractImagesUiState(
-    val statusMessage: String = "Select a PDF",
+    val statusMessage: String = "",
     val inputPath: String? = null,
     val extractedPaths: List<String> = emptyList(),
 )
 
-class ExtractImagesViewModel : ViewModel() {
-    private val _state = MutableStateFlow(ExtractImagesUiState())
+class ExtractImagesViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        ExtractImagesUiState(statusMessage = application.getString(R.string.tool_extract_images_default_status))
+    )
     val state: StateFlow<ExtractImagesUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = ExtractImagesUiState(statusMessage = "From pipeline", inputPath = path)
+        _state.value = ExtractImagesUiState(statusMessage = getApplication<Application>().getString(R.string.tool_extract_images_from_pipeline), inputPath = path)
     }
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Loading…")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_loading))
             try {
                 val inputPath = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -38,9 +42,9 @@ class ExtractImagesViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = ExtractImagesUiState(statusMessage = "Ready", inputPath = inputPath)
+                _state.value = ExtractImagesUiState(statusMessage = context.getString(R.string.status_ready), inputPath = inputPath)
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed to read: ${e.message}")
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.error_read_failed, e.message))
             }
         }
     }
@@ -48,18 +52,18 @@ class ExtractImagesViewModel : ViewModel() {
     fun onExtractClicked() {
         val inputPath = state.value.inputPath ?: return
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Extracting…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_extract_images_extracting))
             val paths = try {
                 withContext(Dispatchers.IO) {
                     val outDir = File(File(inputPath).parentFile, "extracted_${UUID.randomUUID()}").apply { mkdirs() }
                     extractImages(inputPath, outDir.absolutePath)
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Extraction failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_extract_images_error, e.message))
                 return@launch
             }
             _state.value = state.value.copy(
-                statusMessage = "Extracted ${paths.size} image(s)",
+                statusMessage = getApplication<Application>().getString(R.string.tool_extract_images_success, paths.size),
                 extractedPaths = paths,
             )
         }
@@ -80,7 +84,7 @@ class ExtractImagesViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = state.value.copy(statusMessage = "Saved ${paths.size} image(s).")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.tool_extract_images_saved, paths.size))
         }
     }
 }

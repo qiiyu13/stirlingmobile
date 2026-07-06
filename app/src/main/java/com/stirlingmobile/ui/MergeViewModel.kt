@@ -1,30 +1,32 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.stirlingmobile.R
 import uniffi.stirling_engine.mergePdfs
 import java.io.File
 import java.util.UUID
 
 data class MergeUiState(
-    val statusMessage: String = "Select 2+ PDFs to merge",
+    val statusMessage: String,
     val mergedFilePath: String? = null,
 )
 
-class MergeViewModel : ViewModel() {
-    private val _state = MutableStateFlow(MergeUiState())
+class MergeViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(MergeUiState(statusMessage = application.getString(R.string.tool_merge_select_prompt)))
     val state: StateFlow<MergeUiState> = _state
 
     fun onFilesSelected(context: Context, uris: List<Uri>) {
         viewModelScope.launch {
-            _state.value = MergeUiState(statusMessage = "Merging ${uris.size} files…")
+            _state.value = MergeUiState(statusMessage = context.getString(R.string.tool_merge_processing, uris.size))
             val outputPath = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -40,10 +42,10 @@ class MergeViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = MergeUiState(statusMessage = "Merge failed: ${e.message}")
+                _state.value = MergeUiState(statusMessage = context.getString(R.string.tool_merge_error_failed, e.message))
                 return@launch
             }
-            _state.value = MergeUiState(statusMessage = "Merged. Ready to save.", mergedFilePath = outputPath)
+            _state.value = MergeUiState(statusMessage = context.getString(R.string.tool_merge_success), mergedFilePath = outputPath)
         }
     }
 
@@ -57,7 +59,7 @@ class MergeViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = MergeUiState(statusMessage = "Saved.")
+            _state.value = MergeUiState(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

@@ -14,8 +14,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun DedupePagesScreen(pipeline: PipelineState? = null, viewModel: DedupePagesViewModel = viewModel()) {
@@ -29,7 +31,7 @@ fun DedupePagesScreen(pipeline: PipelineState? = null, viewModel: DedupePagesVie
         }
     }
     LaunchedEffect(state.resultFilePath) {
-        state.resultFilePath?.let { pipeline?.push(it, "Removed duplicate pages") }
+        state.resultFilePath?.let { pipeline?.push(it, context.getString(R.string.tool_dedupe_pages_history_label)) }
     }
 
     val pickFile = rememberLauncherForActivityResult(
@@ -46,32 +48,32 @@ fun DedupePagesScreen(pipeline: PipelineState? = null, viewModel: DedupePagesVie
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Remove Duplicate Pages")
+        Text(stringResource(R.string.tool_dedupe_pages_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(if (state.inputPath == null) stringResource(R.string.action_select_pdf) else stringResource(R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
 
         if (state.inputPath != null) {
             Button(onClick = { viewModel.onDetectClicked() }) {
-                Text("Detect Duplicates")
+                Text(stringResource(R.string.tool_dedupe_pages_action_detect))
             }
         }
 
         state.duplicatePages?.let { pages ->
             if (pages.isNotEmpty()) {
-                Text("Duplicate pages: ${pages.joinToString(", ")}")
+                Text(stringResource(R.string.tool_dedupe_pages_label_duplicate_list, pages.joinToString(", ")))
                 Button(onClick = { viewModel.onRemoveClicked() }) {
-                    Text("Remove Duplicates")
+                    Text(stringResource(R.string.tool_dedupe_pages_action_remove))
                 }
             }
         }
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("deduped.pdf") }) {
-                Text("Save PDF")
+                Text(stringResource(R.string.action_save_pdf))
             }
         }
     }

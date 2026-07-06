@@ -1,20 +1,22 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stirlingmobile.R
 import uniffi.stirling_engine.contentAddText
 import java.io.File
 import java.util.UUID
 
 data class AddTextUiState(
-    val statusMessage: String = "Select a PDF",
+    val statusMessage: String = "",
     val inputPath: String? = null,
     val pageNumber: String = "1",
     val text: String = "",
@@ -24,17 +26,19 @@ data class AddTextUiState(
     val resultFilePath: String? = null,
 )
 
-class AddTextViewModel : ViewModel() {
-    private val _state = MutableStateFlow(AddTextUiState())
+class AddTextViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        AddTextUiState(statusMessage = application.getString(R.string.tool_add_text_default_status))
+    )
     val state: StateFlow<AddTextUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = AddTextUiState(statusMessage = "From pipeline", inputPath = path)
+        _state.value = AddTextUiState(statusMessage = getApplication<Application>().getString(R.string.tool_add_text_from_pipeline), inputPath = path)
     }
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Loading…")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_loading))
             try {
                 val inputPath = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -42,9 +46,9 @@ class AddTextViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = state.value.copy(statusMessage = "Ready", inputPath = inputPath, resultFilePath = null)
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.status_ready), inputPath = inputPath, resultFilePath = null)
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed to read: ${e.message}")
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -63,7 +67,7 @@ class AddTextViewModel : ViewModel() {
         val fontSize = state.value.fontSize.toFloatOrNull() ?: return
         val text = state.value.text
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Adding text…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_add_text_adding))
             val output = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(inputPath).parentFile!!
@@ -72,10 +76,10 @@ class AddTextViewModel : ViewModel() {
                     outputFile
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_add_text_error, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Text added", resultFilePath = output.absolutePath)
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_add_text_success), resultFilePath = output.absolutePath)
         }
     }
 
@@ -89,7 +93,7 @@ class AddTextViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = state.value.copy(statusMessage = "Saved.")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

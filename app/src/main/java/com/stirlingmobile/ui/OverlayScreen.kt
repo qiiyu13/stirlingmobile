@@ -19,8 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun OverlayScreen(pipeline: PipelineState? = null, viewModel: OverlayViewModel = viewModel()) {
@@ -48,23 +50,23 @@ fun OverlayScreen(pipeline: PipelineState? = null, viewModel: OverlayViewModel =
     }
 
     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Overlay PDFs")
+        Text(stringResource(R.string.tool_overlay_title))
         Button(enabled = !state.busy, onClick = { pickBase.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.basePath == null) "Select base PDF" else "Base PDF selected")
+            Text(stringResource(if (state.basePath == null) R.string.tool_overlay_select_base else R.string.tool_overlay_base_selected))
         }
         Button(enabled = !state.busy, onClick = { pickOverlay.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.overlayPath == null) "Select overlay PDF" else "Overlay PDF selected")
+            Text(stringResource(if (state.overlayPath == null) R.string.tool_overlay_select_overlay else R.string.tool_overlay_overlay_selected))
         }
         if (state.busy) CircularProgressIndicator()
         Text(state.statusMessage)
 
         if (state.basePath != null && state.overlayPath != null && !state.busy) {
-            OutlinedTextField(opacity, { opacity = it }, label = { Text("Opacity (0-1)") })
-            Button(onClick = { viewModel.onApply(context, opacity.toFloatOrNull() ?: 1.0f) }) { Text("Overlay") }
+            OutlinedTextField(opacity, { opacity = it }, label = { Text(stringResource(R.string.tool_overlay_opacity_label)) })
+            Button(onClick = { viewModel.onApply(context, opacity.toFloatOrNull() ?: 1.0f) }) { Text(stringResource(R.string.tool_overlay_apply_button)) }
         }
 
         if (state.resultPath != null) {
-            Button(onClick = { saveResult.launch("overlaid.pdf") }) { Text("Save") }
+            Button(onClick = { saveResult.launch("overlaid.pdf") }) { Text(stringResource(R.string.action_save)) }
         }
     }
 }

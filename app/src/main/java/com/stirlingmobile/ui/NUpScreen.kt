@@ -18,8 +18,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 private val N_OPTIONS = listOf(2u, 4u, 6u, 9u)
 
@@ -46,21 +48,21 @@ fun NUpScreen(pipeline: PipelineState? = null, viewModel: NUpViewModel = viewMod
     }
 
     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Multi-Page Layout (N-up)")
-        Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) { Text("Select PDF") }
+        Text(stringResource(R.string.tool_n_up_title))
+        Button(enabled = !state.busy, onClick = { pickPdf.launch(arrayOf("application/pdf")) }) { Text(stringResource(R.string.action_select_pdf)) }
         if (state.busy) CircularProgressIndicator()
         Text(state.statusMessage)
 
         if (state.inputPath != null && !state.busy) {
             N_OPTIONS.forEach { n ->
                 Button(onClick = { selectedN = n.toInt(); viewModel.onApply(context, n) }) {
-                    Text("${n}-up")
+                    Text(stringResource(R.string.tool_n_up_option, n.toInt()))
                 }
             }
         }
 
         if (state.resultPath != null) {
-            Button(onClick = { saveResult.launch("n-up.pdf") }) { Text("Save") }
+            Button(onClick = { saveResult.launch("n-up.pdf") }) { Text(stringResource(R.string.action_save)) }
         }
     }
 }

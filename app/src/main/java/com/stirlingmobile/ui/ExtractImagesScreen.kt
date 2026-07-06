@@ -14,8 +14,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 import java.io.File
 
 @Composable
@@ -42,17 +44,17 @@ fun ExtractImagesScreen(pipeline: PipelineState? = null, viewModel: ExtractImage
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Extract Images")
+        Text(stringResource(R.string.tool_extract_images_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.inputPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
 
         if (state.inputPath != null) {
             Button(onClick = { viewModel.onExtractClicked() }) {
-                Text("Extract Images")
+                Text(stringResource(R.string.tool_extract_images_action))
             }
         }
 
@@ -62,7 +64,7 @@ fun ExtractImagesScreen(pipeline: PipelineState? = null, viewModel: ExtractImage
 
         if (state.extractedPaths.isNotEmpty()) {
             Button(onClick = { pickFolder.launch(null) }) {
-                Text("Save to folder")
+                Text(stringResource(R.string.action_save_to_folder))
             }
         }
     }

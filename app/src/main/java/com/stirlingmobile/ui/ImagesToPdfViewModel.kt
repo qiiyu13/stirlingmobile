@@ -1,8 +1,10 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import com.stirlingmobile.R
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,17 +16,17 @@ import java.io.File
 import java.util.UUID
 
 data class ImagesToPdfUiState(
-    val statusMessage: String = "Select images to combine into a PDF",
+    val statusMessage: String,
     val resultFilePath: String? = null,
 )
 
-class ImagesToPdfViewModel : ViewModel() {
-    private val _state = MutableStateFlow(ImagesToPdfUiState())
+class ImagesToPdfViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(ImagesToPdfUiState(statusMessage = application.getString(R.string.tool_images_to_pdf_select_prompt)))
     val state: StateFlow<ImagesToPdfUiState> = _state
 
     fun onFilesSelected(context: Context, uris: List<Uri>) {
         viewModelScope.launch {
-            _state.value = ImagesToPdfUiState(statusMessage = "Converting ${uris.size} images…")
+            _state.value = ImagesToPdfUiState(statusMessage = context.getString(R.string.tool_images_to_pdf_converting, uris.size))
             val outputPath = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -40,10 +42,10 @@ class ImagesToPdfViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = ImagesToPdfUiState(statusMessage = "Conversion failed: ${e.message}")
+                _state.value = ImagesToPdfUiState(statusMessage = context.getString(R.string.tool_images_to_pdf_failed, e.message))
                 return@launch
             }
-            _state.value = ImagesToPdfUiState(statusMessage = "Done. Ready to save.", resultFilePath = outputPath)
+            _state.value = ImagesToPdfUiState(statusMessage = context.getString(R.string.tool_images_to_pdf_done), resultFilePath = outputPath)
         }
     }
 
@@ -57,7 +59,7 @@ class ImagesToPdfViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = ImagesToPdfUiState(statusMessage = "Saved.")
+            _state.value = ImagesToPdfUiState(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

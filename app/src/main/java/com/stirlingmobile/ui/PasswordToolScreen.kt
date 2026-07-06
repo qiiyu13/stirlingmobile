@@ -1,5 +1,6 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,21 +19,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.stirlingmobile.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-private class PasswordToolViewModelFactory(private val mode: PasswordToolMode) : ViewModelProvider.Factory {
+private class PasswordToolViewModelFactory(private val application: Application, private val mode: PasswordToolMode) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = PasswordToolViewModel(mode) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = PasswordToolViewModel(application, mode) as T
 }
 
 @Composable
 fun PasswordToolScreen(mode: PasswordToolMode, pipeline: PipelineState? = null) {
     val context = LocalContext.current
-    val viewModel: PasswordToolViewModel = viewModel(factory = PasswordToolViewModelFactory(mode))
+    val viewModel: PasswordToolViewModel = viewModel(
+        factory = PasswordToolViewModelFactory(context.applicationContext as Application, mode)
+    )
     val state by viewModel.state.collectAsState()
     val pipelineCurrent = pipeline?.state?.collectAsState()?.value?.current
     LaunchedEffect(pipelineCurrent) {
@@ -61,10 +66,10 @@ fun PasswordToolScreen(mode: PasswordToolMode, pipeline: PipelineState? = null) 
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(mode.label)
+        Text(stringResource(mode.labelRes))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.inputPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
@@ -73,7 +78,7 @@ fun PasswordToolScreen(mode: PasswordToolMode, pipeline: PipelineState? = null) 
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text(if (mode == PasswordToolMode.ADD) "Password" else "Document password") },
+                label = { Text(stringResource(if (mode == PasswordToolMode.ADD) R.string.tool_password_tool_password_label else R.string.tool_password_tool_document_password_label)) },
                 visualTransformation = PasswordVisualTransformation()
             )
 
@@ -81,19 +86,19 @@ fun PasswordToolScreen(mode: PasswordToolMode, pipeline: PipelineState? = null) 
                 OutlinedTextField(
                     value = ownerPassword,
                     onValueChange = { ownerPassword = it },
-                    label = { Text("Owner password (optional, defaults to same)") },
+                    label = { Text(stringResource(R.string.tool_password_tool_owner_password_label)) },
                     visualTransformation = PasswordVisualTransformation()
                 )
             }
 
             Button(onClick = { viewModel.onApplyClicked(password, ownerPassword) }) {
-                Text(mode.label)
+                Text(stringResource(mode.labelRes))
             }
         }
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("result.pdf") }) {
-                Text("Save PDF")
+                Text(stringResource(R.string.action_save_pdf))
             }
         }
     }

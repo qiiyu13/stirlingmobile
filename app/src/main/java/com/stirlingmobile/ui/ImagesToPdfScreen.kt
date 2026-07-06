@@ -14,8 +14,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun ImagesToPdfScreen(pipeline: PipelineState? = null, viewModel: ImagesToPdfViewModel = viewModel()) {
@@ -41,17 +43,17 @@ fun ImagesToPdfScreen(pipeline: PipelineState? = null, viewModel: ImagesToPdfVie
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Images to PDF")
+        Text(stringResource(R.string.tool_images_to_pdf_title))
 
         Button(onClick = { pickImages.launch(arrayOf("image/jpeg", "image/png")) }) {
-            Text("Select images")
+            Text(stringResource(R.string.action_select_images))
         }
 
         Text(state.statusMessage)
 
         if (state.resultFilePath != null) {
             Button(onClick = { saveResult.launch("images.pdf") }) {
-                Text("Save PDF")
+                Text(stringResource(R.string.action_save_pdf))
             }
         }
     }

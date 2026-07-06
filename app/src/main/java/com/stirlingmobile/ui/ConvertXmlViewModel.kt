@@ -1,35 +1,39 @@
 package com.stirlingmobile.ui
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stirlingmobile.R
 import uniffi.stirling_engine.convertPdfToXml
 import java.io.File
 import java.util.UUID
 
 data class ConvertXmlUiState(
-    val statusMessage: String = "Select a PDF",
+    val statusMessage: String = "",
     val inputPath: String? = null,
     val resultFilePath: String? = null,
 )
 
-class ConvertXmlViewModel : ViewModel() {
-    private val _state = MutableStateFlow(ConvertXmlUiState())
+class ConvertXmlViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        ConvertXmlUiState(statusMessage = application.getString(R.string.tool_convert_xml_default_status))
+    )
     val state: StateFlow<ConvertXmlUiState> = _state
 
     fun usePipelineFile(path: String) {
-        _state.value = ConvertXmlUiState(statusMessage = "From pipeline", inputPath = path)
+        _state.value = ConvertXmlUiState(statusMessage = getApplication<Application>().getString(R.string.tool_convert_xml_from_pipeline), inputPath = path)
     }
 
     fun onFilePicked(context: Context, uri: Uri) {
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Loading…")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_loading))
             try {
                 val inputPath = withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -37,9 +41,9 @@ class ConvertXmlViewModel : ViewModel() {
                     context.contentResolver.openInputStream(uri)!!.use { it.copyTo(input.outputStream()) }
                     input.absolutePath
                 }
-                _state.value = ConvertXmlUiState(statusMessage = "Ready", inputPath = inputPath)
+                _state.value = ConvertXmlUiState(statusMessage = context.getString(R.string.status_ready), inputPath = inputPath)
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Failed to read: ${e.message}")
+                _state.value = state.value.copy(statusMessage = context.getString(R.string.error_failed_to_read, e.message))
             }
         }
     }
@@ -47,7 +51,7 @@ class ConvertXmlViewModel : ViewModel() {
     fun onConvertClicked() {
         val inputPath = state.value.inputPath ?: return
         viewModelScope.launch {
-            _state.value = state.value.copy(statusMessage = "Converting…")
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_convert_xml_converting))
             val output = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(inputPath).parentFile!!
@@ -56,10 +60,10 @@ class ConvertXmlViewModel : ViewModel() {
                     outputFile
                 }
             } catch (e: Exception) {
-                _state.value = state.value.copy(statusMessage = "Conversion failed: ${e.message}")
+                _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_convert_xml_error, e.message))
                 return@launch
             }
-            _state.value = state.value.copy(statusMessage = "Converted to XML", resultFilePath = output.absolutePath)
+            _state.value = state.value.copy(statusMessage = getApplication<Application>().getString(R.string.tool_convert_xml_success), resultFilePath = output.absolutePath)
         }
     }
 
@@ -73,7 +77,7 @@ class ConvertXmlViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = state.value.copy(statusMessage = "Saved.")
+            _state.value = state.value.copy(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

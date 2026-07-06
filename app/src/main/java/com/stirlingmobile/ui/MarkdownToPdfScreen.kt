@@ -13,8 +13,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun MarkdownToPdfScreen(viewModel: MarkdownToPdfViewModel = viewModel()) {
@@ -29,10 +31,10 @@ fun MarkdownToPdfScreen(viewModel: MarkdownToPdfViewModel = viewModel()) {
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Markdown to PDF")
+        Text(stringResource(R.string.tool_markdown_to_pdf_title))
 
         Button(onClick = { pickFile.launch(arrayOf("text/markdown", "text/plain", "text/x-markdown")) }) {
-            Text("Select Markdown file")
+            Text(stringResource(R.string.tool_markdown_to_pdf_select_button))
         }
 
         Text(state.statusMessage)

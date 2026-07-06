@@ -2,6 +2,7 @@ package com.stirlingmobile.ui
 
 import android.content.Context
 import android.net.Uri
+import com.stirlingmobile.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +30,7 @@ class GenerateCertificateViewModel : ViewModel() {
 
     fun onGenerateClicked(context: Context, commonName: String, password: String) {
         viewModelScope.launch {
-            _state.value = GenerateCertificateUiState(statusMessage = "Generating…")
+            _state.value = GenerateCertificateUiState(statusMessage = context.getString(R.string.tool_generate_certificate_generating))
             val outputPath = try {
                 withContext(Dispatchers.IO) {
                     val workingDir = File(context.filesDir, "working").apply { mkdirs() }
@@ -38,10 +39,10 @@ class GenerateCertificateViewModel : ViewModel() {
                     output.absolutePath
                 }
             } catch (e: Exception) {
-                _state.value = GenerateCertificateUiState(statusMessage = "Generation failed: ${e.message}")
+                _state.value = GenerateCertificateUiState(statusMessage = context.getString(R.string.tool_generate_certificate_failed, e.message))
                 return@launch
             }
-            _state.value = GenerateCertificateUiState(statusMessage = "Done. Save it, then remember the password - it's not stored.", resultFilePath = outputPath)
+            _state.value = GenerateCertificateUiState(statusMessage = context.getString(R.string.tool_generate_certificate_done), resultFilePath = outputPath)
         }
     }
 
@@ -55,7 +56,7 @@ class GenerateCertificateViewModel : ViewModel() {
                     }
                 }
             }
-            _state.value = GenerateCertificateUiState(statusMessage = "Saved.")
+            _state.value = GenerateCertificateUiState(statusMessage = context.getString(R.string.status_saved))
         }
     }
 }

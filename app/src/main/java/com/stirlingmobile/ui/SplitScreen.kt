@@ -17,8 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun SplitScreen(viewModel: SplitViewModel = viewModel()) {
@@ -41,10 +43,10 @@ fun SplitScreen(viewModel: SplitViewModel = viewModel()) {
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Split PDF")
+        Text(stringResource(R.string.tool_split_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.inputPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
@@ -53,17 +55,17 @@ fun SplitScreen(viewModel: SplitViewModel = viewModel()) {
             OutlinedTextField(
                 value = splitPointsText,
                 onValueChange = { splitPointsText = it },
-                label = { Text("Split after pages, 1-${state.pageCount!! - 1u} (e.g. 3,6)") }
+                label = { Text(stringResource(R.string.tool_split_input_label, (state.pageCount!! - 1u).toString())) }
             )
 
             Button(onClick = { viewModel.onSplitClicked(context, splitPointsText) }) {
-                Text("Split")
+                Text(stringResource(R.string.tool_split_action))
             }
         }
 
         if (state.outputPaths.isNotEmpty()) {
             Button(onClick = { pickSaveFolder.launch(null) }) {
-                Text("Save all to folder")
+                Text(stringResource(R.string.tool_split_save_all_action))
             }
         }
     }

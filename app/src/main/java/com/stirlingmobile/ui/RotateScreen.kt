@@ -15,8 +15,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stirlingmobile.R
 
 @Composable
 fun RotateScreen(pipeline: PipelineState? = null, viewModel: RotateViewModel = viewModel()) {
@@ -46,10 +48,10 @@ fun RotateScreen(pipeline: PipelineState? = null, viewModel: RotateViewModel = v
         modifier = Modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Rotate PDF")
+        Text(stringResource(R.string.tool_rotate_title))
 
         Button(onClick = { pickFile.launch(arrayOf("application/pdf")) }) {
-            Text(if (state.inputPath == null) "Select PDF" else "Select a different PDF")
+            Text(stringResource(if (state.inputPath == null) R.string.action_select_pdf else R.string.action_select_different_pdf))
         }
 
         Text(state.statusMessage)
@@ -58,7 +60,7 @@ fun RotateScreen(pipeline: PipelineState? = null, viewModel: RotateViewModel = v
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(90, 180, 270).forEach { angle ->
                     Button(onClick = { viewModel.onAngleChosen(angle) }) {
-                        Text("${angle}°")
+                        Text(stringResource(R.string.tool_rotate_angle_degrees, angle))
                     }
                 }
             }
@@ -66,7 +68,7 @@ fun RotateScreen(pipeline: PipelineState? = null, viewModel: RotateViewModel = v
 
         if (state.rotatedFilePath != null) {
             Button(onClick = { saveResult.launch("rotated.pdf") }) {
-                Text("Save rotated PDF")
+                Text(stringResource(R.string.tool_rotate_save_action))
             }
         }
     }
