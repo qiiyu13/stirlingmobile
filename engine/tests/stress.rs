@@ -91,6 +91,71 @@ fn build_pdf(path: &Path, n: u32, marker_prefix: &str) {
     doc.save(path).unwrap();
 }
 
+/// Like `build_pdf`, but pads each page's content stream with junk `Tj` ops
+/// to approach a target on-disk file size — needed to reproduce NF-002
+/// (2x 50MB / ~250 pages) instead of the KB-sized fixtures the correctness
+/// stress tests use.
+fn build_pdf_sized(path: &Path, n: u32, marker_prefix: &str, target_bytes: usize) {
+    let mut doc = Document::with_version("1.7");
+    let font_id = doc.add_object(dictionary! {
+        "Type" => "Font",
+        "Subtype" => "Type1",
+        "BaseFont" => "Helvetica",
+    });
+    let resources_id = doc.add_object(dictionary! {
+        "Font" => dictionary! { "F1" => font_id },
+    });
+    let pages_id = doc.new_object_id();
+    let mut kids = Vec::new();
+    let pad_per_page = target_bytes / n as usize;
+    let mut rng = Rng(0x5eed);
+    for i in 1..=n {
+        let text = format!("{marker_prefix}-{i}");
+        // Random (incompressible) padding — a repeated-byte fill would let
+        // Flate crush the stream back to nothing, which understates real
+        // merge cost on image-heavy PDFs. Random bytes keep the on-disk
+        // size honest through save_document's compression.
+        let junk: Vec<u8> = (0..pad_per_page.max(1))
+            .map(|_| rng.next() as u8)
+            .collect();
+        let content = Content {
+            operations: vec![
+                Operation::new("BT", vec![]),
+                Operation::new("Tf", vec!["F1".into(), 24.into()]),
+                Operation::new("Td", vec![72.into(), 700.into()]),
+                Operation::new("Tj", vec![Object::string_literal(text)]),
+                Operation::new("ET", vec![]),
+                // opaque padding — never rendered, just bulks up the stream
+                // so on-disk size approximates a real-world scanned/image PDF
+                Operation::new("%pad", vec![Object::string_literal(junk)]),
+            ],
+        };
+        let content_id = doc.add_object(lopdf::Stream::new(dictionary! {}, content.encode().unwrap()));
+        let page_id = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages_id,
+            "Resources" => resources_id,
+            "MediaBox" => vec![0.into(), 0.into(), 612.into(), 792.into()],
+            "Contents" => content_id,
+        });
+        kids.push(Object::Reference(page_id));
+    }
+    doc.objects.insert(
+        pages_id,
+        Object::Dictionary(dictionary! {
+            "Type" => "Pages",
+            "Count" => n as i64,
+            "Kids" => kids,
+        }),
+    );
+    let catalog_id = doc.add_object(dictionary! {
+        "Type" => "Catalog",
+        "Pages" => pages_id,
+    });
+    doc.trailer.set("Root", Object::Reference(catalog_id));
+    doc.save(path).unwrap();
+}
+
 fn qpdf_check(path: &Path) -> bool {
     Command::new("qpdf")
         .arg("--check")
@@ -316,4 +381,121 @@ fn stress_password_round_trip() {
         assert!(qpdf_check(&recovered), "recovered pdf invalid on iter {i}");
         assert_eq!(pdftotext(&recovered), original_text, "text mismatch on iter {i}");
     }
+}
+
+/// W21 profiling: real wall-clock number for NF-002
+/// (docs/07-performance-budget.md — "Merge 2 PDFs (NF-002): 2x 50MB,
+/// ~250 pages each, target <5s"). `#[ignore]`d — heavy (builds ~100MB of
+/// fixtures) and not a correctness check, run explicitly:
+///   cargo test --release --test stress bench_merge_nf002 -- --ignored --nocapture
+#[test]
+#[ignore]
+fn bench_merge_nf002() {
+    let dir = work_dir();
+    let a = dir.join("nf002_a.pdf");
+    let b = dir.join("nf002_b.pdf");
+    let out = dir.join("nf002_out.pdf");
+    let target_bytes = 50 * 1024 * 1024;
+    build_pdf_sized(&a, 250, "A", target_bytes);
+    build_pdf_sized(&b, 250, "B", target_bytes);
+
+    let a_size = std::fs::metadata(&a).unwrap().len();
+    let b_size = std::fs::metadata(&b).unwrap().len();
+
+    let start = std::time::Instant::now();
+    stirling_engine::merge_pdfs(
+        vec![a.to_string_lossy().into_owned(), b.to_string_lossy().into_owned()],
+        out.to_string_lossy().into_owned(),
+    )
+    .expect("merge failed");
+    let elapsed = start.elapsed();
+
+    let out_size = std::fs::metadata(&out).unwrap().len();
+    assert!(qpdf_check(&out), "qpdf --check failed on merged output");
+    assert_eq!(
+        stirling_engine::get_page_count(out.to_string_lossy().into_owned()).unwrap(),
+        500
+    );
+
+    println!(
+        "NF-002: merge {}MB + {}MB -> {}MB in {:.3}s (target <5s)",
+        a_size / 1024 / 1024,
+        b_size / 1024 / 1024,
+        out_size / 1024 / 1024,
+        elapsed.as_secs_f64()
+    );
+    assert!(
+        elapsed.as_secs_f64() < 5.0,
+        "NF-002 regression: merge took {:.3}s, budget is 5s",
+        elapsed.as_secs_f64()
+    );
+}
+
+/// W21 profiling: "Split pages | 50MB, 200 pages | < 2s" (07-performance-budget.md §1).
+#[test]
+#[ignore]
+fn bench_split_50mb() {
+    let dir = work_dir();
+    let input = dir.join("split_in.pdf");
+    build_pdf_sized(&input, 200, "S", 50 * 1024 * 1024);
+    let in_size = std::fs::metadata(&input).unwrap().len();
+
+    let start = std::time::Instant::now();
+    let parts = stirling_engine::split_pdf(
+        input.to_string_lossy().into_owned(),
+        vec![100],
+        dir.to_string_lossy().into_owned(),
+    )
+    .expect("split failed");
+    let elapsed = start.elapsed();
+
+    assert_eq!(parts.len(), 2);
+    for p in &parts {
+        assert!(qpdf_check(Path::new(p)), "qpdf --check failed on {p}");
+    }
+
+    println!(
+        "Split: {}MB / 200 pages -> {} parts in {:.3}s (target <2s)",
+        in_size / 1024 / 1024,
+        parts.len(),
+        elapsed.as_secs_f64()
+    );
+    assert!(
+        elapsed.as_secs_f64() < 2.0,
+        "Split regression: took {:.3}s, budget is 2s",
+        elapsed.as_secs_f64()
+    );
+}
+
+/// W21 profiling: "Rotate all pages | 50MB, 200 pages | < 3s" (07-performance-budget.md §1).
+#[test]
+#[ignore]
+fn bench_rotate_50mb() {
+    let dir = work_dir();
+    let input = dir.join("rotate_in.pdf");
+    let out = dir.join("rotate_out.pdf");
+    build_pdf_sized(&input, 200, "R", 50 * 1024 * 1024);
+    let in_size = std::fs::metadata(&input).unwrap().len();
+
+    let start = std::time::Instant::now();
+    stirling_engine::rotate_pdf(
+        input.to_string_lossy().into_owned(),
+        90,
+        out.to_string_lossy().into_owned(),
+    )
+    .expect("rotate failed");
+    let elapsed = start.elapsed();
+
+    assert!(qpdf_check(&out), "qpdf --check failed on rotated output");
+
+    println!(
+        "Rotate: {}MB / 200 pages in {:.3}s (target <3s)",
+        in_size / 1024 / 1024,
+        elapsed.as_secs_f64()
+    );
+    assert!(
+        elapsed.as_secs_f64() < 3.0,
+        "Rotate regression: took {:.3}s, budget is 3s",
+        elapsed.as_secs_f64()
+    );
 }

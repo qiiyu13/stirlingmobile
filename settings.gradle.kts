@@ -15,3 +15,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "stirlingmobile"
 include(":app")
+include(":app:benchmark")
+project(":app:benchmark").projectDir = file("app/benchmark")
